@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2FA Verification — Smart Manufacturing Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #080c12; --surface: #0d1420; --surface2: #111827;
+      --border: rgba(240,180,41,0.15); --accent: #F0B429; --accent2: #D4970A;
+      --accent-g: linear-gradient(135deg, #F0B429, #A8183F);
+      --text: #e2e8f0; --muted: #64748b; --danger: #f87171; --success: #34d399;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: linear-gradient(rgba(240,180,41,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(240,180,41,0.07) 1px, transparent 1px);
+      background-size: 48px 48px; pointer-events: none; z-index: 0;
+    }
+    .glow-1, .glow-2 { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.25; pointer-events: none; z-index: 0; }
+    .glow-1 { width: 500px; height: 500px; background: #F0B429; top: -150px; left: -150px; }
+    .glow-2 { width: 400px; height: 400px; background: #A8183F; bottom: -100px; right: -100px; }
+
+    .top-bar {
+      position: fixed; top: 0; left: 0; right: 0; height: 52px;
+      background: rgba(13,20,32,0.8); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border); display: flex; align-items: center;
+      padding: 0 24px; gap: 10px; z-index: 100;
+    }
+    .top-bar .logo-icon { width: 28px; height: 28px; background: var(--accent-g); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .top-bar .logo-icon svg { width: 16px; height: 16px; fill: white; }
+    .top-bar .brand { font-size: 13px; font-weight: 600; }
+    .top-bar .brand span { color: var(--accent); }
+    .top-bar .badge { margin-left: auto; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--accent); background: rgba(240,180,41,0.1); border: 1px solid rgba(240,180,41,0.2); padding: 2px 8px; border-radius: 20px; }
+
+    .page-wrapper { position: relative; z-index: 1; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+
+    .card { width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 40px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); }
+    .card-header { text-align: center; margin-bottom: 32px; }
+    .icon-wrap { width: 64px; height: 64px; background: linear-gradient(135deg, rgba(240,180,41,0.12), rgba(168,24,63,0.12)); border: 1px solid rgba(240,180,41,0.25); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; }
+    .icon-wrap svg { width: 30px; height: 30px; stroke: var(--accent); }
+    .card-header h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .card-header p { color: var(--muted); font-size: 13px; line-height: 1.6; }
+
+    /* OTP digit input boxes */
+    .otp-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 28px; }
+    .otp-input {
+      width: 52px; height: 60px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text);
+      outline: none;
+      caret-color: var(--accent);
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .otp-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(240,180,41,0.12); background: rgba(240,180,41,0.04); }
+    .otp-input.filled { border-color: rgba(240,180,41,0.35); color: var(--accent); }
+    .otp-input.error { border-color: rgba(248,113,113,0.5); box-shadow: 0 0 0 3px rgba(248,113,113,0.1); }
+
+    .timer-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; }
+    .timer-ring { width: 36px; height: 36px; position: relative; }
+    .timer-ring svg { width: 36px; height: 36px; transform: rotate(-90deg); }
+    .timer-ring circle { fill: none; stroke-width: 3; }
+    .timer-bg { stroke: var(--border); }
+    .timer-fg { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 88; transition: stroke-dashoffset 1s linear; }
+    .timer-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 600; }
+    .timer-label { font-size: 12px; color: var(--muted); }
+
+    .btn-primary { width: 100%; height: 46px; background: var(--accent-g); border: none; border-radius: 10px; color: white; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s, transform 0.15s; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-primary .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .alert { display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; align-items: center; gap: 8px; }
+    .alert.show { display: flex; }
+    .alert.error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); color: #fca5a5; }
+    .alert.success { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: #6ee7b7; }
+    .alert svg { width: 16px; height: 16px; stroke: currentColor; flex-shrink: 0; }
+
+    .back-link { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 20px; font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .back-link:hover { color: var(--accent); }
+    .back-link svg { width: 14px; height: 14px; stroke: currentColor; }
+
+    .app-hint { margin-bottom: 24px; background: rgba(240,180,41,0.05); border: 1px solid rgba(240,180,41,0.12); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .app-hint svg { width: 18px; height: 18px; stroke: var(--accent); flex-shrink: 0; margin-top: 1px; }
+    .app-hint p { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+    .app-hint strong { color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="glow-1"></div>
+<div class="glow-2"></div>
+
+<header class="top-bar">
+  <div class="logo-icon">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+    </svg>
+  </div>
+  <span class="brand">3D <span>IHack</span> Floor</span>
+  <span class="badge">GANNON UNIVERSITY</span>
+</header>
+
+<div class="page-wrapper">
+  <div class="card">
+    <div class="card-header">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+          <line x1="12" y1="18" x2="12.01" y2="18"/>
+          <path d="M9 7h6M9 11h6"/>
+        </svg>
+      </div>
+      <h1>Two-Factor Authentication</h1>
+      <p>Enter the 6-digit code from your<br/>authenticator app to continue.</p>
+    </div>
+
+    <div class="app-hint">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <p>Open <strong>Google Authenticator</strong>, <strong>Authy</strong>, or any TOTP app and enter the code shown for <strong>3D IHack Floor</strong>.</p>
+    </div>
+
+    <div class="alert" id="alertBox">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span id="alertMsg"></span>
+    </div>
+
+    <div class="otp-row" id="otpRow">
+      <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="0" />
+      <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="1" />
+      <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="2" />
+      <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="3" />
+      <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="4" />
+      <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="5" />
+    </div>
+
+    <!-- TOTP 30-second countdown ring -->
+    <div class="timer-row">
+      <div class="timer-ring">
+        <svg viewBox="0 0 36 36">
+          <circle class="timer-bg" cx="18" cy="18" r="14"/>
+          <circle class="timer-fg" id="timerCircle" cx="18" cy="18" r="14"/>
+        </svg>
+        <div class="timer-text" id="timerText">30</div>
+      </div>
+      <span class="timer-label">Code refreshes every 30 seconds</span>
+    </div>
+
+    <button class="btn-primary" id="verifyBtn" disabled>
+      <div class="spinner" id="spinner"></div>
+      <span id="btnText">Verify Code</span>
+    </button>
+
+    <a href="/login" class="back-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Back to login
+    </a>
+  </div>
+</div>
+
+<script>
+  // Redirect if no pre-auth token
+  const preAuthToken = sessionStorage.getItem('preAuthToken');
+  if (!preAuthToken) window.location.href = '/login';
+
+  // OTP input management
+  const inputs = Array.from(document.querySelectorAll('.otp-input'));
+  const verifyBtn = document.getElementById('verifyBtn');
+
+  function getCode() { return inputs.map(i => i.value).join(''); }
+  function checkComplete() { verifyBtn.disabled = getCode().length !== 6; }
+
+  inputs.forEach((input, idx) => {
+    input.addEventListener('input', (e) => {
+      const val = e.target.value.replace(/\D/g, '');
+      e.target.value = val.slice(-1);
+      e.target.classList.toggle('filled', val !== '');
+      if (val && idx < 5) inputs[idx + 1].focus();
+      checkComplete();
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !input.value && idx > 0) {
+        inputs[idx - 1].value = '';
+        inputs[idx - 1].classList.remove('filled');
+        inputs[idx - 1].focus();
+        checkComplete();
+      }
+    });
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+      text.split('').forEach((ch, i) => {
+        if (inputs[i]) { inputs[i].value = ch; inputs[i].classList.add('filled'); }
+      });
+      inputs[Math.min(text.length, 5)].focus();
+      checkComplete();
+    });
+  });
+
+  // TOTP countdown timer
+  function updateTimer() {
+    const now = Math.floor(Date.now() / 1000);
+    const remaining = 30 - (now % 30);
+    const circumference = 88;
+    const offset = circumference * (1 - remaining / 30);
+    document.getElementById('timerCircle').style.strokeDashoffset = offset;
+    document.getElementById('timerText').textContent = remaining;
+    if (remaining <= 5) {
+      document.getElementById('timerCircle').style.stroke = '#f87171';
+      document.getElementById('timerText').style.color = '#f87171';
+    } else {
+      document.getElementById('timerCircle').style.stroke = '#F0B429';
+      document.getElementById('timerText').style.color = '#F0B429';
+    }
+  }
+  updateTimer();
+  setInterval(updateTimer, 1000);
+
+  // Verify
+  const alertBox = document.getElementById('alertBox');
+  const alertMsg = document.getElementById('alertMsg');
+  const spinner  = document.getElementById('spinner');
+  const btnText  = document.getElementById('btnText');
+
+  function showAlert(msg, type = 'error') {
+    alertBox.className = `alert ${type} show`;
+    alertMsg.textContent = msg;
+    if (type === 'error') {
+      inputs.forEach(i => i.classList.add('error'));
+      setTimeout(() => inputs.forEach(i => i.classList.remove('error')), 600);
+    }
+  }
+  function setLoading(on) {
+    verifyBtn.disabled = on;
+    spinner.style.display = on ? 'block' : 'none';
+    btnText.textContent = on ? 'Verifying…' : 'Verify Code';
+  }
+
+  verifyBtn.addEventListener('click', async () => {
+    const code = getCode();
+    if (code.length !== 6) return;
+
+    setLoading(true);
+    alertBox.className = 'alert';
+
+    try {
+      const res = await fetch('/api/auth/verify-2fa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ token: code, preAuthToken })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showAlert(data.error || 'Invalid code. Please try again.');
+        inputs.forEach(i => { i.value = ''; i.classList.remove('filled'); });
+        inputs[0].focus();
+        checkComplete();
+        return;
+      }
+
+      sessionStorage.removeItem('preAuthToken');
+      if (data.token) localStorage.setItem('authToken', data.token);
+      showAlert('Authentication successful!', 'success');
+      setTimeout(() => { window.location.href = '/dashboard'; }, 800);
+
+    } catch {
+      showAlert('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  // Focus first input on load
+  inputs[0].focus();
+</script>
+</body>
+</html>

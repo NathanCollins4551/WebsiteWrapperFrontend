@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setup 2FA — Smart Manufacturing Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #080c12; --surface: #0d1420; --surface2: #111827;
+      --border: rgba(240,180,41,0.15); --accent: #F0B429;
+      --accent-g: linear-gradient(135deg, #F0B429, #A8183F);
+      --text: #e2e8f0; --muted: #64748b; --success: #34d399;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(240,180,41,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(240,180,41,0.07) 1px, transparent 1px); background-size: 48px 48px; pointer-events: none; z-index: 0; }
+    .glow-1, .glow-2 { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.25; pointer-events: none; z-index: 0; }
+    .glow-1 { width: 500px; height: 500px; background: #F0B429; top: -150px; left: -150px; }
+    .glow-2 { width: 400px; height: 400px; background: #A8183F; bottom: -100px; right: -100px; }
+
+    .top-bar { position: fixed; top: 0; left: 0; right: 0; height: 52px; background: rgba(13,20,32,0.8); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 10px; z-index: 100; }
+    .top-bar .logo-icon { width: 28px; height: 28px; background: var(--accent-g); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .top-bar .logo-icon svg { width: 16px; height: 16px; fill: white; }
+    .top-bar .brand { font-size: 13px; font-weight: 600; }
+    .top-bar .brand span { color: var(--accent); }
+    .top-bar .badge { margin-left: auto; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--accent); background: rgba(240,180,41,0.1); border: 1px solid rgba(240,180,41,0.2); padding: 2px 8px; border-radius: 20px; }
+
+    .page-wrapper { position: relative; z-index: 1; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 80px 24px 24px; }
+
+    .card { width: 100%; max-width: 480px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 40px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); }
+    .card-header { text-align: center; margin-bottom: 32px; }
+    .step-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--accent); background: rgba(240,180,41,0.1); border: 1px solid rgba(240,180,41,0.2); padding: 4px 12px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .card-header h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .card-header p { color: var(--muted); font-size: 13px; }
+
+    /* Steps */
+    .steps { display: flex; gap: 0; margin-bottom: 28px; }
+    .step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+    .step:not(:last-child)::after { content: ''; position: absolute; top: 15px; left: 60%; right: -40%; height: 1px; background: var(--border); }
+    .step.active:not(:last-child)::after { background: rgba(240,180,41,0.3); }
+    .step-num { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--muted); transition: all 0.3s; position: relative; z-index: 1; }
+    .step.active .step-num { border-color: var(--accent); background: rgba(240,180,41,0.1); color: var(--accent); }
+    .step.done .step-num { border-color: var(--success); background: rgba(52,211,153,0.1); color: var(--success); }
+    .step-label { font-size: 10px; color: var(--muted); text-align: center; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+    .step.active .step-label { color: var(--accent); }
+
+    /* QR section */
+    #step1, #step2 { display: none; }
+    #step1.active, #step2.active { display: block; }
+
+    .qr-wrap { text-align: center; margin-bottom: 20px; }
+    .qr-wrap img { width: 180px; height: 180px; border-radius: 12px; border: 3px solid rgba(240,180,41,0.2); background: white; padding: 8px; }
+    .qr-placeholder { width: 180px; height: 180px; border-radius: 12px; border: 2px dashed var(--border); display: inline-flex; align-items: center; justify-content: center; }
+    .qr-placeholder svg { width: 48px; height: 48px; stroke: var(--muted); }
+
+    .secret-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 20px; }
+    .secret-box label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 8px; }
+    .secret-value { display: flex; align-items: center; gap: 10px; }
+    .secret-code { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--accent); letter-spacing: 0.15em; flex: 1; word-break: break-all; }
+    .copy-btn { flex-shrink: 0; background: rgba(240,180,41,0.1); border: 1px solid rgba(240,180,41,0.2); border-radius: 7px; color: var(--accent); font-size: 11px; font-family: inherit; padding: 5px 10px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .copy-btn:hover { background: rgba(240,180,41,0.2); }
+
+    .info-list { list-style: none; margin-bottom: 24px; }
+    .info-list li { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; color: #94a3b8; }
+    .info-list li:last-child { border-bottom: none; }
+    .info-list li svg { width: 15px; height: 15px; stroke: var(--accent); flex-shrink: 0; margin-top: 1px; }
+
+    /* OTP verify row */
+    .otp-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
+    .otp-input { width: 48px; height: 56px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; color: var(--text); outline: none; caret-color: var(--accent); transition: border-color 0.2s, box-shadow 0.2s; }
+    .otp-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(240,180,41,0.12); }
+    .otp-input.filled { border-color: rgba(240,180,41,0.35); color: var(--accent); }
+
+    .btn-primary { width: 100%; height: 46px; background: var(--accent-g); border: none; border-radius: 10px; color: white; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s, transform 0.15s; margin-bottom: 12px; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-secondary { width: 100%; height: 44px; background: transparent; border: 1px solid var(--border); border-radius: 10px; color: var(--muted); font-family: inherit; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .alert { display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; align-items: center; gap: 8px; }
+    .alert.show { display: flex; }
+    .alert.error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); color: #fca5a5; }
+    .alert.success { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: #6ee7b7; }
+    .alert svg { width: 16px; height: 16px; stroke: currentColor; flex-shrink: 0; }
+
+    /* Success screen */
+    #stepSuccess { display: none; text-align: center; }
+    #stepSuccess.active { display: block; }
+    .success-icon { width: 72px; height: 72px; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+    .success-icon svg { width: 36px; height: 36px; stroke: var(--success); }
+    #stepSuccess h2 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+    #stepSuccess p { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+  </style>
+</head>
+<body>
+<div class="glow-1"></div>
+<div class="glow-2"></div>
+<header class="top-bar">
+  <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+  <span class="brand">3D <span>IHack</span> Floor</span>
+  <span class="badge">GANNON UNIVERSITY</span>
+</header>
+
+<div class="page-wrapper">
+  <div class="card">
+    <div class="card-header">
+      <div class="step-badge">Security Setup</div>
+      <h1>Enable Two-Factor Authentication</h1>
+      <p>Add an extra layer of security to your account</p>
+    </div>
+
+    <div class="steps" id="stepsBar">
+      <div class="step active" id="stepDot1">
+        <div class="step-num">1</div>
+        <div class="step-label">Scan QR</div>
+      </div>
+      <div class="step" id="stepDot2">
+        <div class="step-num">2</div>
+        <div class="step-label">Verify</div>
+      </div>
+      <div class="step" id="stepDot3">
+        <div class="step-num">3</div>
+        <div class="step-label">Done</div>
+      </div>
+    </div>
+
+    <!-- Step 1: Show QR -->
+    <div id="step1" class="active">
+      <div class="qr-wrap">
+        <div class="qr-placeholder" id="qrPlaceholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            <line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="17" y2="14"/><line x1="14" y1="17" x2="14" y2="17"/><line x1="17" y1="17" x2="17" y2="17"/><line x1="20" y1="14" x2="20" y2="14"/>
+          </svg>
+        </div>
+        <img id="qrImage" src="" alt="QR Code" style="display:none;" />
+      </div>
+
+      <div class="secret-box">
+        <label>Manual entry key (if camera unavailable)</label>
+        <div class="secret-value">
+          <span class="secret-code" id="secretCode">Loading…</span>
+          <button class="copy-btn" id="copyBtn" type="button">Copy</button>
+        </div>
+      </div>
+
+      <ul class="info-list">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Open Google Authenticator, Authy, or any TOTP app
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Tap the + button and scan the QR code above
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Your account will be linked — codes refresh every 30 seconds
+        </li>
+      </ul>
+
+      <button class="btn-primary" id="nextBtn" type="button">
+        Continue to Verification
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Step 2: Verify code -->
+    <div id="step2">
+      <p style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:20px;">
+        Enter the 6-digit code from your authenticator app to confirm setup.
+      </p>
+
+      <div class="alert" id="alertBox">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="alertMsg"></span>
+      </div>
+
+      <div class="otp-row">
+        <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="0" />
+        <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="1" />
+        <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="2" />
+        <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="3" />
+        <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="4" />
+        <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="5" />
+      </div>
+
+      <button class="btn-primary" id="confirmBtn" type="button" disabled>
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">Enable 2FA</span>
+      </button>
+      <button class="btn-secondary" id="backBtn" type="button">Back</button>
+    </div>
+
+    <!-- Success -->
+    <div id="stepSuccess">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h2>2FA Enabled!</h2>
+      <p>Your account is now protected with two-factor authentication. You'll be asked for a code on each login.</p>
+      <button class="btn-primary" id="doneBtn" type="button">Go to Dashboard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const token = localStorage.getItem('authToken');
+  if (!token) window.location.href = '/login';
+
+  let tempSecret = null;
+
+  // Load QR code
+  async function loadQR() {
+    try {
+      const res = await fetch('/api/auth/setup-2fa', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      tempSecret = data.secret;
+      document.getElementById('secretCode').textContent = data.secret;
+      document.getElementById('qrImage').src = data.qrCode;
+      document.getElementById('qrImage').style.display = 'block';
+      document.getElementById('qrPlaceholder').style.display = 'none';
+    } catch (e) {
+      document.getElementById('secretCode').textContent = 'Error loading — please refresh';
+    }
+  }
+  loadQR();
+
+  // Copy secret
+  document.getElementById('copyBtn').addEventListener('click', async () => {
+    if (tempSecret) {
+      await navigator.clipboard.writeText(tempSecret).catch(() => {});
+      document.getElementById('copyBtn').textContent = 'Copied!';
+      setTimeout(() => { document.getElementById('copyBtn').textContent = 'Copy'; }, 2000);
+    }
+  });
+
+  // Step navigation
+  const step1 = document.getElementById('step1');
+  const step2 = document.getElementById('step2');
+  const stepSuccess = document.getElementById('stepSuccess');
+
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    step1.classList.remove('active');
+    step2.classList.add('active');
+    document.getElementById('stepDot1').classList.remove('active');
+    document.getElementById('stepDot1').classList.add('done');
+    document.getElementById('stepDot1').querySelector('.step-num').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="20 6 9 17 4 12"/></svg>`;
+    document.getElementById('stepDot2').classList.add('active');
+    document.querySelectorAll('.otp-input')[0].focus();
+  });
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    step2.classList.remove('active');
+    step1.classList.add('active');
+    document.getElementById('stepDot2').classList.remove('active');
+    document.getElementById('stepDot1').classList.add('active');
+    document.getElementById('stepDot1').classList.remove('done');
+    document.getElementById('stepDot1').querySelector('.step-num').textContent = '1';
+    document.getElementById('alertBox').className = 'alert';
+  });
+
+  // OTP inputs
+  const inputs = Array.from(document.querySelectorAll('.otp-input'));
+  const confirmBtn = document.getElementById('confirmBtn');
+  function getCode() { return inputs.map(i => i.value).join(''); }
+  function checkComplete() { confirmBtn.disabled = getCode().length !== 6; }
+
+  inputs.forEach((input, idx) => {
+    input.addEventListener('input', (e) => {
+      const val = e.target.value.replace(/\D/g, '');
+      e.target.value = val.slice(-1);
+      e.target.classList.toggle('filled', val !== '');
+      if (val && idx < 5) inputs[idx + 1].focus();
+      checkComplete();
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !input.value && idx > 0) {
+        inputs[idx - 1].value = '';
+        inputs[idx - 1].classList.remove('filled');
+        inputs[idx - 1].focus();
+        checkComplete();
+      }
+    });
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+      text.split('').forEach((ch, i) => { if (inputs[i]) { inputs[i].value = ch; inputs[i].classList.add('filled'); } });
+      inputs[Math.min(text.length, 5)].focus();
+      checkComplete();
+    });
+  });
+
+  // Confirm 2FA setup
+  confirmBtn.addEventListener('click', async () => {
+    const code = getCode();
+    document.getElementById('alertBox').className = 'alert';
+    document.getElementById('spinner').style.display = 'block';
+    document.getElementById('btnText').textContent = 'Enabling…';
+    confirmBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/auth/confirm-2fa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        credentials: 'include',
+        body: JSON.stringify({ code })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        document.getElementById('alertBox').className = 'alert error show';
+        document.getElementById('alertMsg').textContent = data.error || 'Verification failed';
+        inputs.forEach(i => { i.value = ''; i.classList.remove('filled'); });
+        inputs[0].focus();
+        checkComplete();
+        return;
+      }
+      step2.classList.remove('active');
+      stepSuccess.classList.add('active');
+      document.getElementById('stepDot2').classList.remove('active');
+      document.getElementById('stepDot2').classList.add('done');
+      document.getElementById('stepDot3').classList.add('done');
+    } catch {
+      document.getElementById('alertBox').className = 'alert error show';
+      document.getElementById('alertMsg').textContent = 'Network error. Please try again.';
+    } finally {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('btnText').textContent = 'Enable 2FA';
+    }
+  });
+
+  document.getElementById('doneBtn').addEventListener('click', () => { window.location.href = '/dashboard'; });
+</script>
+</body>
+</html>

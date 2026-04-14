@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — Smart Manufacturing Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #04060c;
+      --surface:   #090e1a;
+      --surface2:  #0e1525;
+      --border:    rgba(240,180,41,0.2);
+      --border-h:  rgba(240,180,41,0.6);
+      --accent:    #F0B429;
+      --accent2:   #D4970A;
+      --accent-g:  linear-gradient(135deg, #F0B429, #A8183F);
+      --maroon:    #A8183F;
+      --text:      #f1f5f9;
+      --muted:     #6b7a8d;
+      --danger:    #f87171;
+      --success:   #34d399;
+      --warning:   #fbbf24;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* Animated background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(240,180,41,0.09) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(240,180,41,0.09) 1px, transparent 1px);
+      background-size: 52px 52px;
+      animation: gridShift 20s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes gridShift {
+      0% { background-position: 0 0; }
+      100% { background-position: 52px 52px; }
+    }
+
+    /* Ambient glow blobs */
+    .glow-1, .glow-2, .glow-3 {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      z-index: 0;
+      animation: floatGlow 8s ease-in-out infinite;
+    }
+    .glow-1 { width: 700px; height: 700px; background: #F0B429; opacity: 0.22; top: -250px; left: -250px; animation-delay: 0s; }
+    .glow-2 { width: 600px; height: 600px; background: #A8183F; opacity: 0.2; bottom: -200px; right: -200px; animation-delay: -4s; }
+    .glow-3 { width: 300px; height: 300px; background: #F0B429; opacity: 0.08; top: 50%; left: 50%; transform: translate(-50%,-50%); animation-delay: -2s; }
+    @keyframes floatGlow {
+      0%, 100% { transform: scale(1) translate(0, 0); }
+      33% { transform: scale(1.06) translate(15px, -10px); }
+      66% { transform: scale(0.95) translate(-10px, 15px); }
+    }
+    .glow-3 { animation: floatGlow3 10s ease-in-out infinite; }
+    @keyframes floatGlow3 {
+      0%, 100% { transform: translate(-50%,-50%) scale(1); }
+      50% { transform: translate(-50%,-50%) scale(1.5); opacity: 0.04; }
+    }
+
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* Top header bar */
+    .top-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 52px;
+      background: rgba(4, 6, 12, 0.9);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(240,180,41,0.25);
+      box-shadow: 0 1px 20px rgba(240,180,41,0.08);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .top-bar .logo-icon {
+      width: 28px; height: 28px;
+      background: var(--accent-g);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .top-bar .logo-icon svg { width: 16px; height: 16px; fill: white; }
+    .top-bar .brand { font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: 0.01em; }
+    .top-bar .brand span { color: var(--accent); text-shadow: 0 0 12px rgba(240,180,41,0.6); }
+    .top-bar .badge {
+      margin-left: auto;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #fff;
+      background: linear-gradient(135deg, rgba(240,180,41,0.25), rgba(168,24,63,0.25));
+      border: 1px solid rgba(240,180,41,0.4);
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+      box-shadow: 0 0 10px rgba(240,180,41,0.2);
+    }
+
+    /* Card */
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--surface);
+      border: 1px solid rgba(240,180,41,0.3);
+      border-radius: 18px;
+      padding: 40px;
+      box-shadow:
+        0 0 0 1px rgba(240,180,41,0.08),
+        0 0 40px rgba(240,180,41,0.12),
+        0 0 80px rgba(168,24,63,0.08),
+        0 32px 80px rgba(0,0,0,0.6);
+      backdrop-filter: blur(12px);
+      position: relative;
+    }
+    /* Animated shimmer border */
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 19px;
+      background: linear-gradient(135deg, rgba(240,180,41,0.5), rgba(168,24,63,0.3), rgba(240,180,41,0.1), rgba(168,24,63,0.4));
+      background-size: 300% 300%;
+      animation: borderGlow 4s ease infinite;
+      z-index: -1;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      padding: 1px;
+    }
+    @keyframes borderGlow {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .card-header { text-align: center; margin-bottom: 32px; }
+    .card-header .icon-wrap {
+      width: 60px; height: 60px;
+      background: linear-gradient(135deg, rgba(240,180,41,0.2), rgba(168,24,63,0.2));
+      border: 1px solid rgba(240,180,41,0.4);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: 0 0 20px rgba(240,180,41,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .card-header .icon-wrap svg { width: 28px; height: 28px; stroke: var(--accent); filter: drop-shadow(0 0 6px rgba(240,180,41,0.6)); }
+    .card-header h1 { font-size: 23px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 30%, #F0B429);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .card-header p { color: var(--muted); font-size: 13px; }
+
+    /* Status indicator */
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(52, 211, 153, 0.06);
+      border: 1px solid rgba(52, 211, 153, 0.2);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 24px;
+      font-size: 12px;
+      color: #a7f3d0;
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 6px var(--success);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Form */
+    .form-group { margin-bottom: 18px; }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 7px;
+    }
+
+    .input-wrap { position: relative; }
+    .input-wrap .input-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px; height: 16px;
+      stroke: var(--muted);
+      pointer-events: none;
+      transition: stroke 0.2s;
+    }
+    input[type="text"], input[type="password"], input[type="email"] {
+      width: 100%;
+      height: 46px;
+      background: rgba(14,21,37,0.8);
+      border: 1px solid rgba(240,180,41,0.2);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 0 42px 0 40px;
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+    }
+    input:focus {
+      border-color: var(--accent);
+      background: rgba(240,180,41,0.04);
+      box-shadow: 0 0 0 3px rgba(240,180,41,0.15), 0 0 16px rgba(240,180,41,0.1);
+    }
+    input:focus + .input-icon, .input-wrap:has(input:focus) .input-icon { stroke: var(--accent); }
+    input::placeholder { color: var(--muted); }
+
+    .toggle-pw {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+    }
+    .toggle-pw:hover { color: var(--accent); }
+    .toggle-pw svg { width: 16px; height: 16px; stroke: currentColor; }
+
+    /* Forgot password */
+    .form-footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      margin-top: -6px;
+    }
+    .remember-wrap { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .remember-wrap input[type="checkbox"] {
+      width: 15px; height: 15px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      padding: 0;
+    }
+    .remember-wrap span { font-size: 12px; color: var(--muted); }
+    .link { font-size: 12px; color: var(--accent); text-decoration: none; transition: opacity 0.2s; }
+    .link:hover { opacity: 0.75; }
+
+    /* Primary button */
+    .btn-primary {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, #F5C030, #C01A45, #F5C030);
+      background-size: 200% 100%;
+      border: none;
+      border-radius: 11px;
+      color: white;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      transition: background-position 0.4s, transform 0.15s, box-shadow 0.2s;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      box-shadow: 0 4px 24px rgba(240,180,41,0.35), 0 2px 8px rgba(168,24,63,0.3);
+    }
+    .btn-primary:hover {
+      background-position: 100% 0;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(240,180,41,0.5), 0 4px 16px rgba(168,24,63,0.4);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-primary .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Register link */
+    .register-row { text-align: center; font-size: 13px; color: var(--muted); }
+    .register-row a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .register-row a:hover { text-decoration: underline; }
+
+    /* Alert */
+    .alert {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 18px;
+      align-items: center;
+      gap: 8px;
+    }
+    .alert.show { display: flex; }
+    .alert.error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); color: #fca5a5; }
+    .alert.success { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: #6ee7b7; }
+    .alert svg { width: 16px; height: 16px; stroke: currentColor; flex-shrink: 0; }
+
+    /* Security info chips */
+    .security-chips {
+      display: flex;
+      gap: 8px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      color: #c9b87a;
+      background: rgba(240,180,41,0.07);
+      border: 1px solid rgba(240,180,41,0.22);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+    }
+    .chip svg { width: 10px; height: 10px; stroke: var(--accent); filter: drop-shadow(0 0 3px rgba(240,180,41,0.5)); }
+  </style>
+</head>
+<body>
+
+<div class="glow-1"></div>
+<div class="glow-2"></div>
+<div class="glow-3"></div>
+
+<header class="top-bar">
+  <div class="logo-icon">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+    </svg>
+  </div>
+  <span class="brand">3D <span>IHack</span> Floor</span>
+  <span class="badge">GANNON UNIVERSITY</span>
+</header>
+
+<div class="page-wrapper">
+  <div class="card">
+    <div class="card-header">
+      <div class="icon-wrap">
+        <!-- Shield icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <h1>Secure Sign In</h1>
+      <p>3D Smart Manufacturing Floor Optimization</p>
+    </div>
+
+    <div class="status-row">
+      <div class="status-dot"></div>
+      All systems operational — Production floor online
+    </div>
+
+    <div class="alert error" id="alertBox">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span id="alertMsg"></span>
+    </div>
+
+    <form id="loginForm" novalidate>
+      <div class="form-group">
+        <label for="username">Username or Email</label>
+        <div class="input-wrap">
+          <input type="text" id="username" name="username" placeholder="Enter your username" autocomplete="username" required />
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required />
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <button type="button" class="toggle-pw" id="togglePw" aria-label="Toggle password visibility">
+            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-footer-row">
+        <label class="remember-wrap">
+          <input type="checkbox" id="remember" />
+          <span>Remember me</span>
+        </label>
+        <a href="#" class="link">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn-primary" id="submitBtn">
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">Sign In</span>
+        <svg id="btnArrow" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </button>
+    </form>
+
+    <div class="divider">or</div>
+    <div class="register-row">
+      New operator? <a href="/register.html">Request access</a>
+    </div>
+
+    <div class="security-chips">
+      <div class="chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        256-bit encrypted
+      </div>
+      <div class="chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+        2FA protected
+      </div>
+      <div class="chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        Audit logged
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Toggle password visibility
+  const togglePw = document.getElementById('togglePw');
+  const pwInput  = document.getElementById('password');
+  const eyeIcon  = document.getElementById('eyeIcon');
+
+  togglePw.addEventListener('click', () => {
+    const show = pwInput.type === 'password';
+    pwInput.type = show ? 'text' : 'password';
+    eyeIcon.innerHTML = show
+      ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
+      : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+  });
+
+  // Form submit
+  const form      = document.getElementById('loginForm');
+  const alertBox  = document.getElementById('alertBox');
+  const alertMsg  = document.getElementById('alertMsg');
+  const submitBtn = document.getElementById('submitBtn');
+  const spinner   = document.getElementById('spinner');
+  const btnText   = document.getElementById('btnText');
+  const btnArrow  = document.getElementById('btnArrow');
+
+  function showError(msg) {
+    alertBox.className = 'alert error show';
+    alertMsg.textContent = msg;
+  }
+  function setLoading(on) {
+    submitBtn.disabled = on;
+    spinner.style.display = on ? 'block' : 'none';
+    btnText.textContent = on ? 'Signing in…' : 'Sign In';
+    btnArrow.style.display = on ? 'none' : 'block';
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    alertBox.className = 'alert';
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!username || !password) { showError('Please fill in all fields.'); return; }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showError(data.error || 'Login failed. Please try again.');
+        return;
+      }
+
+      if (data.requires2FA) {
+        // Store pre-auth token and redirect to 2FA page
+        sessionStorage.setItem('preAuthToken', data.preAuthToken);
+        window.location.href = '/verify-2fa';
+        return;
+      }
+
+      // Successful login — store token and go to dashboard
+      if (data.token) localStorage.setItem('authToken', data.token);
+      window.location.href = '/dashboard';
+
+    } catch {
+      showError('Network error. Please check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  });
+</script>
+</body>
+</html>
