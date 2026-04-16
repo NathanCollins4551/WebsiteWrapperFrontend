@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const helmet = require('helmet');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
@@ -12,48 +11,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
-// 1. ATOMIC HEADER ENFORCEMENT
-// This middleware runs before everything and uses a wrap on writeHead 
-// to ensure these headers are ATTACHED to every single response, 
-// including 401s, 404s, and static files.
+// GLOBAL HEADER ENFORCEMENT
 app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  
-  // Also hook into writeHead for late-binding headers
-  const prevWriteHead = res.writeHead;
-  res.writeHead = function() {
-    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    return prevWriteHead.apply(this, arguments);
-  };
   next();
 });
-
-// 2. Standard Security Middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'blob:'],
-      connectSrc: ["'self'", BACKEND_URL, 'https://newtwinbackend.quangphuly.online', 'wss://webstream.convai.com'],
-      frameSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'", 'blob:'],
-      workerSrc: ["'self'", 'blob:'],
-    }
-  },
-  // We disable helmet's built-in versions because we enforce them 
-  // atomically above to avoid conflicts or stripping.
-  crossOriginEmbedderPolicy: false,
-  crossOriginOpenerPolicy: false,
-  crossOriginResourcePolicy: false
-}));
 
 const corsOrigin = process.env.ALLOWED_ORIGIN || [
   'http://localhost:3000',
@@ -68,9 +32,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// 3. Unity Static Assets with Forced Headers
+// Unity Static Assets
 app.use('/unity', (req, res, next) => {
-  // Redundant enforcement for the /unity path
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
