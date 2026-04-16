@@ -12,6 +12,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
+
+/////
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
