@@ -5,12 +5,10 @@ const contentToCache = [
     "Build/Temp.data.unityweb",
     "Build/Temp.wasm.unityweb",
     "TemplateData/style.css"
-
 ];
 
 self.addEventListener('install', function (e) {
     console.log('[Service Worker] Install');
-    
     e.waitUntil((async function () {
       const cache = await caches.open(cacheName);
       console.log('[Service Worker] Caching all: app shell and content');
@@ -30,15 +28,19 @@ self.addEventListener('fetch', function (e) {
         cache.put(e.request, response.clone());
       }
 
-      // Security headers for Cross-Origin Isolation
-      // We must reconstruct the response because response headers are immutable
+      // EXPLICIT HEADER RECONSTRUCTION
+      // Since response headers are immutable, we create a new Response with the required headers.
+      // This is the only way to ensure the browser sees the COEP/COOP/CORP headers
+      // for resources served from the Service Worker cache.
       const newHeaders = new Headers(response.headers);
       newHeaders.set("Cross-Origin-Embedder-Policy", "require-corp");
       newHeaders.set("Cross-Origin-Opener-Policy", "same-origin");
       newHeaders.set("Cross-Origin-Resource-Policy", "cross-origin");
 
-
-      return new Response(response.body, {
+      // Handle cases where the body might be empty or consumed
+      let responseBody = response.body;
+      
+      return new Response(responseBody, {
         status: response.status,
         statusText: response.statusText,
         headers: newHeaders

@@ -12,18 +12,27 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
-// 0. ABSOLUTE TOP PRIORITY: Security Headers
-// We set these before EVERYTHING else to ensure even 401/404/500 errors 
-// satisfy the browser's isolation requirements.
+// 1. ATOMIC HEADER ENFORCEMENT
+// This middleware runs before everything and uses a wrap on writeHead 
+// to ensure these headers are ATTACHED to every single response, 
+// including 401s, 404s, and static files.
 app.use((req, res, next) => {
-  // Using 'require-corp' as it is the most standard and widely supported Baseline policy
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  
+  // Also hook into writeHead for late-binding headers
+  const prevWriteHead = res.writeHead;
+  res.writeHead = function() {
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    return prevWriteHead.apply(this, arguments);
+  };
   next();
 });
 
-// Security middleware
+// 2. Standard Security Middleware
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -39,6 +48,8 @@ app.use(helmet({
       workerSrc: ["'self'", 'blob:'],
     }
   },
+  // We disable helmet's built-in versions because we enforce them 
+  // atomically above to avoid conflicts or stripping.
   crossOriginEmbedderPolicy: false,
   crossOriginOpenerPolicy: false,
   crossOriginResourcePolicy: false
@@ -57,15 +68,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// 1. Specific Unity WebGL routes (MUST BE BEFORE GENERAL STATIC)
+// 3. Unity Static Assets with Forced Headers
 app.use('/unity', (req, res, next) => {
+  // Redundant enforcement for the /unity path
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 }, requireAuth, express.static(path.join(__dirname, '../public/unity'), {
   setHeaders: (res, filePath) => {
-    // Explicitly set headers for every file served from /unity
     res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -83,26 +94,21 @@ app.use('/unity', (req, res, next) => {
   }
 }));
 
-// 2. API routes
 app.use('/api/auth', authRoutes);
 
-// 3. General static files (everything else in public)
 app.use(express.static(path.join(__dirname, '../public'), {
   index: false,
   dotfiles: 'deny',
 }));
 
-// 4. Public HTML routes
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, '../public/login.html')));
 app.get('/login', (_req, res) => res.sendFile(path.join(__dirname, '../public/login.html')));
 app.get('/register', (_req, res) => res.sendFile(path.join(__dirname, '../public/register.html')));
 app.get('/verify-2fa', (_req, res) => res.sendFile(path.join(__dirname, '../public/verify-2fa.html')));
 
-// 5. Protected HTML routes
 app.get('/setup-2fa', requireAuth, (_req, res) => res.sendFile(path.join(__dirname, '../public/setup-2fa.html')));
 app.get('/dashboard', requireAuth, (_req, res) => res.sendFile(path.join(__dirname, '../public/dashboard.html')));
 
-// 6. SPA fallback for /unity/* (for deep linking)
 app.get('/unity*', (req, res, next) => {
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
@@ -112,10 +118,8 @@ app.get('/unity*', (req, res, next) => {
   res.sendFile(path.join(__dirname, '../public/unity/index.html'));
 });
 
-// 7. 404 handler
 app.use((_req, res) => res.status(404).sendFile(path.join(__dirname, '../public/login.html')));
 
-// Start server
 app.listen(PORT, () => {
   console.log(`\n✅ Frontend running on http://localhost:${PORT}`);
   console.log(`🔗 Backend: ${BACKEND_URL}`);
