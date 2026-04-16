@@ -33,7 +33,10 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-const corsOrigin = process.env.ALLOWED_ORIGIN || 'http://localhost:3000';
+const corsOrigin = process.env.ALLOWED_ORIGIN || [
+  'http://localhost:3000',
+  'https://makerspace.nathancollins.xyz'
+];
 app.use(cors({
   origin: corsOrigin,
   credentials: true
@@ -44,11 +47,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // 1. Specific Unity WebGL routes (MUST BE BEFORE GENERAL STATIC)
-app.use('/unity', requireAuth, (req, res, next) => {
+// Set headers BEFORE authentication check so even error responses (401) have them, 
+// preventing COEP blocks in the parent frame.
+app.use('/unity', (req, res, next) => {
   res.set('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.set('Cross-Origin-Resource-Policy', 'same-origin');
+  res.set('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
-}, express.static(path.join(__dirname, '../public/unity'), {
+}, requireAuth, express.static(path.join(__dirname, '../public/unity'), {
   setHeaders: (res, filePath) => {
     if (filePath.toLowerCase().endsWith('.unityweb')) {
       res.setHeader('Content-Encoding', 'br');
@@ -83,9 +88,11 @@ app.get('/setup-2fa', requireAuth, (_req, res) => res.sendFile(path.join(__dirna
 app.get('/dashboard', requireAuth, (_req, res) => res.sendFile(path.join(__dirname, '../public/dashboard.html')));
 
 // 6. SPA fallback for /unity/* (for deep linking)
-app.get('/unity*', requireAuth, (req, res) => {
+app.get('/unity*', (req, res, next) => {
   res.set('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.set('Cross-Origin-Resource-Policy', 'same-origin');
+  res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/unity/index.html'));
 });
 
