@@ -16,8 +16,8 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 // We set these before EVERYTHING else to ensure even 401/404/500 errors 
 // satisfy the browser's isolation requirements.
 app.use((req, res, next) => {
-  // Use 'credentialless' for maximum compatibility as suggested by the browser error
-  res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+  // Using 'require-corp' as it is the most standard and widely supported Baseline policy
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
@@ -59,14 +59,14 @@ app.use(cookieParser());
 
 // 1. Specific Unity WebGL routes (MUST BE BEFORE GENERAL STATIC)
 app.use('/unity', (req, res, next) => {
-  res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 }, requireAuth, express.static(path.join(__dirname, '../public/unity'), {
   setHeaders: (res, filePath) => {
     // Explicitly set headers for every file served from /unity
-    res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     
@@ -104,7 +104,7 @@ app.get('/dashboard', requireAuth, (_req, res) => res.sendFile(path.join(__dirna
 
 // 6. SPA fallback for /unity/* (for deep linking)
 app.get('/unity*', (req, res, next) => {
-  res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
