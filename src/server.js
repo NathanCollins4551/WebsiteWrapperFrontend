@@ -36,7 +36,9 @@ app.use(helmet({
 // Global middleware to ensure COOP and COEP are always set, even if helmet is partially bypassed
 app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.setHeader('Cross-Origin-OpenerPolicy', 'same-origin');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  // Allow resources to be loaded by this page or from this page
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 });
 
@@ -56,12 +58,14 @@ app.use(cookieParser());
 // 1. Specific Unity WebGL routes (MUST BE BEFORE GENERAL STATIC)
 app.use('/unity', (req, res, next) => {
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 }, requireAuth, express.static(path.join(__dirname, '../public/unity'), {
   setHeaders: (res, filePath) => {
-    // Explicitly set COEP and CORP for every file served from /unity
+    // Explicitly set headers for every file served from /unity
     res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     
     if (filePath.toLowerCase().endsWith('.unityweb')) {
@@ -99,6 +103,7 @@ app.get('/dashboard', requireAuth, (_req, res) => res.sendFile(path.join(__dirna
 // 6. SPA fallback for /unity/* (for deep linking)
 app.get('/unity*', (req, res, next) => {
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 }, requireAuth, (req, res) => {
