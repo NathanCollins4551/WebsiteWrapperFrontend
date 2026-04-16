@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard — Smart Manufacturing Portal</title>
+  <title>Dashboard — MakerSpace Digital Twin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -35,9 +35,6 @@
     .nav-divider { width: 1px; height: 24px; background: var(--border); margin: 0 8px; }
     .nav-pill { font-size: 11px; font-weight: 500; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; letter-spacing: 0.04em; text-transform: uppercase; }
     .nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-    .status-chip { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #a7f3d0; font-family: 'JetBrains Mono', monospace; }
-    .dot-live { width: 6px; height: 6px; background: var(--success); border-radius: 50%; box-shadow: 0 0 6px var(--success); animation: pulse 2s ease-in-out infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     .user-chip { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px 4px 4px; cursor: pointer; transition: border-color 0.2s; }
     .user-chip:hover { border-color: var(--accent); }
     .user-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--accent-g); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; }
@@ -72,21 +69,6 @@
 
     /* Main content */
     .main { overflow-y: auto; background: var(--bg); display: flex; flex-direction: column; }
-
-    /* Stat cards */
-    .stats-bar {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1px;
-      background: var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-    .stat-card { background: var(--surface3); padding: 16px 20px; }
-    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-    .stat-label svg { width: 13px; height: 13px; stroke: currentColor; }
-    .stat-value { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--text); }
-    .stat-sub { font-size: 11px; color: var(--success); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
-    .stat-sub.warn { color: var(--warning); }
 
     /* Unity frame area */
     .unity-section { flex: 1; display: flex; flex-direction: column; padding: 20px; gap: 16px; min-height: 0; }
@@ -180,13 +162,12 @@
       <div class="logo-icon">
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
       </div>
-      <span class="logo-brand">3D <span>IHack</span> Floor</span>
+      <span class="logo-brand">MakerSpace <span>Digital Twin</span></span>
     </div>
     <div class="nav-divider"></div>
     <span class="nav-pill">Production Floor</span>
 
     <div class="nav-right">
-      <div class="status-chip"><div class="dot-live"></div> LIVE — 3 printers active</div>
       <div class="user-chip" id="userChip">
         <div class="user-avatar" id="navAvatar">?</div>
         <span class="user-name" id="navUsername">Loading…</span>
@@ -276,51 +257,6 @@
 
   <!-- Main -->
   <main class="main">
-    <!-- Stats bar -->
-    <div class="stats-bar">
-      <div class="stat-card">
-        <div class="stat-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          Printers Active
-        </div>
-        <div class="stat-value">3 / 5</div>
-        <div class="stat-sub">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          60% utilization
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Current Job ETA
-        </div>
-        <div class="stat-value">2h 14m</div>
-        <div class="stat-sub">Layer 124 / 380</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8"/></svg>
-          Inventory Items
-        </div>
-        <div class="stat-value">1,847</div>
-        <div class="stat-sub warn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-          3 items low stock
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          Jobs Today
-        </div>
-        <div class="stat-value">17</div>
-        <div class="stat-sub">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          +3 from yesterday
-        </div>
-      </div>
-    </div>
-
     <!-- Unity section -->
     <div class="unity-section">
       <div class="unity-header">
@@ -328,7 +264,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
           </svg>
-          3D Production Floor Visualization
+          MakerSpace Digital Twin Visualization
         </div>
         <div class="unity-actions">
           <button class="btn-sm ghost" id="fullscreenBtn">
@@ -355,8 +291,8 @@
             </svg>
           </div>
           <div class="launch-text">
-            <h3>Production Floor Ready</h3>
-            <p>Launch the 3D visualization to monitor real-time manufacturing operations.</p>
+            <h3>MakerSpace Ready</h3>
+            <p>Launch the 3D visualization to monitor real-time operations.</p>
           </div>
           <button class="launch-btn" id="launchBtn">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -385,7 +321,7 @@
           id="unityIframe"
           src=""
           allow="autoplay; fullscreen"
-          title="3D Smart Manufacturing Floor"
+          title="MakerSpace Digital Twin"
         ></iframe>
       </div>
     </div>
@@ -438,7 +374,7 @@
     { pct: 25, text: 'Loading 3D assets…' },
     { pct: 45, text: 'Connecting to live data stream…' },
     { pct: 65, text: 'Loading production floor scene…' },
-    { pct: 80, text: 'Syncing printer telemetry…' },
+    { pct: 80, text: 'Syncing telemetry…' },
     { pct: 95, text: 'Finalizing…' },
     { pct: 100, text: 'Ready!' },
   ];

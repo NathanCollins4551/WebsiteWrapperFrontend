@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Request Access — Smart Manufacturing Portal</title>
+  <title>Sign Up — MakerSpace Digital Twin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -37,11 +37,8 @@
     .input-wrap { position: relative; }
     .input-wrap .input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; stroke: var(--muted); pointer-events: none; transition: stroke 0.2s; }
     input[type="text"], input[type="password"], input[type="email"], select { width: 100%; height: 44px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: inherit; font-size: 14px; padding: 0 14px 0 40px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
-    select { padding: 0 14px 0 40px; cursor: pointer; appearance: none; }
-    select option { background: var(--surface2); }
     input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(240,180,41,0.12); }
     input::placeholder { color: var(--muted); }
-    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .btn-primary { width: 100%; height: 46px; background: var(--accent-g); border: none; border-radius: 10px; color: white; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s, transform 0.15s; margin-top: 4px; }
     .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
     .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
@@ -65,7 +62,7 @@
 <div class="glow-1"></div><div class="glow-2"></div>
 <header class="top-bar">
   <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
-  <span class="brand">3D <span>IHack</span> Floor</span>
+  <span class="brand">MakerSpace <span>Digital Twin</span></span>
   <span class="badge">GANNON UNIVERSITY</span>
 </header>
 
@@ -78,8 +75,8 @@
           <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
         </svg>
       </div>
-      <h1>Request Access</h1>
-      <p>Create your operator account for the<br/>manufacturing floor portal</p>
+      <h1>Sign Up</h1>
+      <p>Create your account for the<br/>MakerSpace Digital Twin</p>
     </div>
 
     <div class="alert" id="alertBox">
@@ -88,31 +85,10 @@
     </div>
 
     <form id="registerForm" novalidate>
-      <div class="row2">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <div class="input-wrap">
-            <input type="text" id="username" placeholder="operator01" autocomplete="username" required />
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="role">Role</label>
-          <div class="input-wrap">
-            <select id="role">
-              <option value="operator">Operator</option>
-              <option value="engineer">Engineer</option>
-              <option value="admin">Admin</option>
-            </select>
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </div>
-        </div>
-      </div>
-
       <div class="form-group">
         <label for="email">Email address</label>
         <div class="input-wrap">
-          <input type="email" id="email" placeholder="you@lockheedmartin.com" autocomplete="email" required />
+          <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
           <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         </div>
       </div>
@@ -186,13 +162,11 @@
     e.preventDefault();
     alertBox.className = 'alert';
 
-    const username = document.getElementById('username').value.trim();
     const email    = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const confirm  = document.getElementById('confirm').value;
-    const role     = document.getElementById('role').value;
 
-    if (!username || !email || !password) { showAlert('All fields are required.'); return; }
+    if (!email || !password) { showAlert('All fields are required.'); return; }
     if (password.length < 8) { showAlert('Password must be at least 8 characters.'); return; }
     if (password !== confirm) { showAlert('Passwords do not match.'); return; }
 
@@ -204,7 +178,7 @@
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password, role })
+        body: JSON.stringify({ email, password })
       });
       const data = await res.json();
       if (!res.ok) { showAlert(data.error || 'Registration failed.'); return; }

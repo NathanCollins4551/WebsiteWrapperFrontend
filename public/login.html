@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign In — Smart Manufacturing Portal</title>
+  <title>Sign In — MakerSpace Digital Twin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
@@ -372,6 +372,7 @@
     /* Security info chips */
     .security-chips {
       display: flex;
+      justify-content: center;
       gap: 8px;
       margin-top: 24px;
       flex-wrap: wrap;
@@ -404,7 +405,7 @@
       <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
     </svg>
   </div>
-  <span class="brand">3D <span>IHack</span> Floor</span>
+  <span class="brand">MakerSpace <span>Digital Twin</span></span>
   <span class="badge">GANNON UNIVERSITY</span>
 </header>
 
@@ -417,13 +418,8 @@
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
       </div>
-      <h1>Secure Sign In</h1>
-      <p>3D Smart Manufacturing Floor Optimization</p>
-    </div>
-
-    <div class="status-row">
-      <div class="status-dot"></div>
-      All systems operational — Production floor online
+      <h1>Sign In</h1>
+      <p>MakerSpace Digital Twin</p>
     </div>
 
     <div class="alert error" id="alertBox">
@@ -435,9 +431,9 @@
 
     <form id="loginForm" novalidate>
       <div class="form-group">
-        <label for="username">Username or Email</label>
+        <label for="username">EMAIL</label>
         <div class="input-wrap">
-          <input type="text" id="username" name="username" placeholder="Enter your username" autocomplete="username" required />
+          <input type="email" id="username" name="username" placeholder="Enter your email" autocomplete="username" required />
           <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
           </svg>
@@ -464,7 +460,7 @@
           <input type="checkbox" id="remember" />
           <span>Remember me</span>
         </label>
-        <a href="#" class="link">Forgot password?</a>
+        <a href="#" class="link" id="forgotPw">Forgot password?</a>
       </div>
 
       <button type="submit" class="btn-primary" id="submitBtn">
@@ -478,7 +474,7 @@
 
     <div class="divider">or</div>
     <div class="register-row">
-      New operator? <a href="/register.html">Request access</a>
+      Dont have an account? <a href="/register.html">Sign Up</a>
     </div>
 
     <div class="security-chips">
@@ -486,7 +482,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
-        256-bit encrypted
+        TLS Secured
       </div>
       <div class="chip">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -494,21 +490,20 @@
         </svg>
         2FA protected
       </div>
-      <div class="chip">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
-        Audit logged
-      </div>
     </div>
   </div>
 </div>
-
 <script>
   // Toggle password visibility
   const togglePw = document.getElementById('togglePw');
   const pwInput  = document.getElementById('password');
   const eyeIcon  = document.getElementById('eyeIcon');
+  const forgotPw = document.getElementById('forgotPw');
+
+  forgotPw.addEventListener('click', (e) => {
+    e.preventDefault();
+    alert('Please contact your administrator to reset your password.');
+  });
 
   togglePw.addEventListener('click', () => {
     const show = pwInput.type === 'password';
@@ -518,7 +513,6 @@
       : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
   });
 
-  // Form submit
   const form      = document.getElementById('loginForm');
   const alertBox  = document.getElementById('alertBox');
   const alertMsg  = document.getElementById('alertMsg');
@@ -531,6 +525,7 @@
     alertBox.className = 'alert error show';
     alertMsg.textContent = msg;
   }
+
   function setLoading(on) {
     submitBtn.disabled = on;
     spinner.style.display = on ? 'block' : 'none';
@@ -540,41 +535,61 @@
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const emailInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+
+    const email = emailInput ? emailInput.value.trim() : '';
+    const password = passwordInput ? passwordInput.value : '';
+
     alertBox.className = 'alert';
 
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
-
-    if (!username || !password) { showError('Please fill in all fields.'); return; }
+    if (!email || !password) {
+      showError('Please fill in all fields.');
+      return;
+    }
 
     setLoading(true);
+
     try {
+      console.log("DEBUG email:", email);
+      console.log("DEBUG password:", password);
+
       const res = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json'
+        },
         credentials: 'include',
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({
+          Email: email,
+          Password: password
+        })
       });
+
       const data = await res.json();
+      console.log("⬅️ Response:", data);
 
       if (!res.ok) {
-        showError(data.error || 'Login failed. Please try again.');
+        showError(data.error || data.title || 'Login failed. Please try again.');
         return;
       }
 
-      if (data.requires2FA) {
-        // Store pre-auth token and redirect to 2FA page
-        sessionStorage.setItem('preAuthToken', data.preAuthToken);
+      if (data.message && data.message.includes('2FA')) {
+        sessionStorage.setItem('userEmail', email);
         window.location.href = '/verify-2fa';
         return;
       }
 
-      // Successful login — store token and go to dashboard
-      if (data.token) localStorage.setItem('authToken', data.token);
+      if (data.token) {
+        localStorage.setItem('authToken', data.token);
+      }
+
       window.location.href = '/dashboard';
 
-    } catch {
-      showError('Network error. Please check your connection.');
+    } catch (err) {
+      console.error("❌ Login error:", err);
+      showError('Network error. Please check backend connection.');
     } finally {
       setLoading(false);
     }

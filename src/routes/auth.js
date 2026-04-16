@@ -1,249 +1,182 @@
 const express = require('express');
 const router = express.Router();
-const { authenticator } = require('otplib');
-const QRCode = require('qrcode');
 const jwt = require('jsonwebtoken');
-const rateLimit = require('express-rate-limit');
-const User = require('../models/user');
+const { requireAuth } = require('../middleware/auth');
 
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { error: 'Too many login attempts. Try again in 15 minutes.' }
-});
+// Backend config
+const BACKEND_URL =
+  process.env.BACKEND_URL?.replace(/\/$/, '') ||
+  'http://localhost:5000';
 
-// POST /api/auth/register
-router.post('/register', async (req, res) => {
+const JWT_SECRET =
+  process.env.JWT_SECRET ||
+  'dev-key-minimum-32-characters-long-xxxxxxxxxxxxxxxxxxxxxxxx';
+
+/**
+ * Normalize payload to backend contract
+ * Backend EXPECTS:
+ * {
+ *   Email: string,
+ *   Password: string
+ * }
+ */
+function normalizeAuthPayload(body) {
+  return {
+    Email: body.Email || body.email,
+    Password: body.Password || body.password
+  };
+}
+
+/**
+ * Backend call helper
+ */
+async function callBackend(path, method, body) {
   try {
-    const { username, email, password, role } = req.body;
+    const url = `${BACKEND_URL}/Auth${path.startsWith('/') ? path : `/${path}`}`;
 
-    if (!username || !email || !password) {
-      return res.status(400).json({ error: 'All fields are required' });
-    }
-    if (password.length < 8) {
-      return res.status(400).json({ error: 'Password must be at least 8 characters' });
-    }
+    console.log('\n==============================');
+    console.log('➡️ BACKEND_URL:', BACKEND_URL);
+    console.log('➡️ REQUEST URL:', url);
+    console.log('➡️ METHOD:', method);
+    console.log('➡️ PAYLOAD:', body);
+    console.log('==============================\n');
 
-    const existing = await User.findOne({ $or: [{ email }, { username }] });
-    if (existing) {
-      return res.status(409).json({ error: 'Username or email already in use' });
-    }
-
-    const user = await User.create({ username, email, password, role: role || 'operator' });
-    res.status(201).json({ message: 'Account created successfully', userId: user._id });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// POST /api/auth/login
-router.post('/login', loginLimiter, async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required' });
-    }
-
-    const user = await User.findOne({ $or: [{ username }, { email: username }] });
-
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    if (user.isLocked) {
-      const remaining = Math.ceil((user.lockUntil - Date.now()) / 60000);
-      return res.status(423).json({ error: `Account locked. Try again in ${remaining} minute(s).` });
-    }
-
-    const valid = await user.comparePassword(password);
-    if (!valid) {
-      await user.incLoginAttempts();
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    // Reset login attempts on success
-    await user.updateOne({ $set: { loginAttempts: 0, lastLogin: new Date() }, $unset: { lockUntil: 1 } });
-
-    if (user.twoFactorEnabled) {
-      // Issue a short-lived pre-auth token for 2FA step
-      const preAuthToken = jwt.sign(
-        { userId: user._id, stage: 'pre-2fa' },
-        process.env.JWT_SECRET,
-        { expiresIn: '5m' }
-      );
-      return res.json({ requires2FA: true, preAuthToken });
-    }
-
-    const token = jwt.sign(
-      { userId: user._id, username: user.username, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: body ? JSON.stringify(body) : undefined
     });
 
-    res.json({ message: 'Login successful', token, user: { username: user.username, role: user.role } });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+    const text = await response.text();
 
-// POST /api/auth/verify-2fa
-router.post('/verify-2fa', async (req, res) => {
-  try {
-    const { token: code, preAuthToken } = req.body;
-    if (!code || !preAuthToken) {
-      return res.status(400).json({ error: 'Code and pre-auth token are required' });
-    }
+    console.log('⬅️ STATUS:', response.status);
+    console.log('⬅️ RESPONSE:', text);
 
-    let decoded;
+    let data;
     try {
-      decoded = jwt.verify(preAuthToken, process.env.JWT_SECRET);
+      data = JSON.parse(text);
     } catch {
-      return res.status(401).json({ error: 'Pre-auth token expired. Please log in again.' });
+      data = { raw: text };
     }
 
-    if (decoded.stage !== 'pre-2fa') {
-      return res.status(401).json({ error: 'Invalid token stage' });
-    }
+    return {
+      ok: response.ok,
+      status: response.status,
+      data
+    };
 
-    const user = await User.findById(decoded.userId);
-    if (!user || !user.twoFactorSecret) {
-      return res.status(401).json({ error: 'Invalid session' });
-    }
+  } catch (err) {
+    console.error('\n❌ BACKEND FETCH FAILED');
+    console.error('URL:', `${BACKEND_URL}/Auth${path}`);
+    console.error('ERROR:', err.message);
 
-    const isValid = authenticator.verify({ token: code, secret: user.twoFactorSecret });
-    if (!isValid) {
-      return res.status(401).json({ error: 'Invalid 2FA code' });
-    }
+    return {
+      ok: false,
+      status: 500,
+      data: {
+        error: 'Backend service unavailable',
+        detail: err.message
+      }
+    };
+  }
+}
 
-    await user.updateOne({ $set: { lastLogin: new Date() } });
+/**
+ * REGISTER
+ */
+router.post('/register', async (req, res) => {
+  const payload = normalizeAuthPayload(req.body);
 
-    const authToken = jwt.sign(
-      { userId: user._id, username: user.username, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
+  const result = await callBackend('/signup', 'POST', payload);
 
-    res.cookie('token', authToken, {
+  if (!result.ok) {
+    console.error('❌ REGISTER FAILED:', result.data);
+    return res.status(result.status).json(result.data);
+  }
+
+  res.json(result.data);
+});
+
+/**
+ * LOGIN
+ */
+router.post('/login', async (req, res) => {
+  const payload = normalizeAuthPayload(req.body);
+
+  const result = await callBackend('/login', 'POST', payload);
+
+  if (!result.ok) {
+    console.error('❌ LOGIN FAILED:', result.data);
+    return res.status(result.status).json(result.data);
+  }
+
+  res.json(result.data);
+});
+
+/**
+ * VERIFY 2FA
+ */
+router.post('/verify', async (req, res) => {
+  const result = await callBackend('/verify-2fa', 'POST', req.body);
+
+  if (!result.ok) {
+    console.error('❌ VERIFY FAILED:', result.data);
+    return res.status(result.status).json(result.data);
+  }
+
+  // If successful, set cookie for the frontend
+  if (result.data.token) {
+    res.cookie('token', result.data.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 3600000 // 1 hour
     });
-
-    res.json({ message: 'Login successful', token: authToken, user: { username: user.username, role: user.role } });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
   }
+
+  res.json(result.data);
 });
 
-// POST /api/auth/setup-2fa  (requires existing JWT)
-router.post('/setup-2fa', async (req, res) => {
-  try {
-    const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Authentication required' });
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    const secret = authenticator.generateSecret();
-    await user.updateOne({ $set: { twoFactorTempSecret: secret } });
-
-    const appName = process.env.TOTP_APP_NAME || 'SmartMfgPortal';
-    const otpAuthUrl = authenticator.keyuri(user.email, appName, secret);
-    const qrDataUrl = await QRCode.toDataURL(otpAuthUrl);
-
-    res.json({ secret, qrCode: qrDataUrl, otpAuthUrl });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// POST /api/auth/confirm-2fa
-router.post('/confirm-2fa', async (req, res) => {
-  try {
-    const { code } = req.body;
-    const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Authentication required' });
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-    if (!user || !user.twoFactorTempSecret) {
-      return res.status(400).json({ error: 'No pending 2FA setup found' });
+/**
+ * GET CURRENT USER
+ */
+router.get('/me', requireAuth, (req, res) => {
+  // req.user was set by requireAuth middleware
+  // We need to map claims to what the frontend expects (username vs email)
+  res.json({
+    user: {
+      id: req.user.sub,
+      username: req.user.email || req.user.username || 'User',
+      role: req.user.role || 'operator'
     }
-
-    const isValid = authenticator.verify({ token: code, secret: user.twoFactorTempSecret });
-    if (!isValid) {
-      return res.status(401).json({ error: 'Invalid code. Please try again.' });
-    }
-
-    await user.updateOne({
-      $set: { twoFactorSecret: user.twoFactorTempSecret, twoFactorEnabled: true },
-      $unset: { twoFactorTempSecret: 1 }
-    });
-
-    res.json({ message: '2FA enabled successfully' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+  });
 });
 
-// POST /api/auth/disable-2fa
-router.post('/disable-2fa', async (req, res) => {
-  try {
-    const { code } = req.body;
-    const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Authentication required' });
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    if (user.twoFactorEnabled) {
-      const isValid = authenticator.verify({ token: code, secret: user.twoFactorSecret });
-      if (!isValid) return res.status(401).json({ error: 'Invalid 2FA code' });
-    }
-
-    await user.updateOne({ $unset: { twoFactorSecret: 1, twoFactorTempSecret: 1 }, $set: { twoFactorEnabled: false } });
-    res.json({ message: '2FA disabled' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// POST /api/auth/logout
+/**
+ * LOGOUT
+ */
 router.post('/logout', (req, res) => {
   res.clearCookie('token');
   res.json({ message: 'Logged out successfully' });
 });
 
-// GET /api/auth/me
-router.get('/me', async (req, res) => {
-  try {
-    const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Not authenticated' });
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password -twoFactorSecret -twoFactorTempSecret');
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    res.json({ user });
-  } catch {
-    res.status(401).json({ error: 'Invalid token' });
-  }
+/**
+ * HEALTH CHECK
+ */
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'frontend-auth',
+    backend: BACKEND_URL,
+    contract: {
+      login: {
+        email: 'required',
+        password: 'required'
+      }
+    }
+  });
 });
 
 module.exports = router;

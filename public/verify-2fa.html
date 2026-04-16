@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>2FA Verification — Smart Manufacturing Portal</title>
+  <title>2FA Verification — MakerSpace Digital Twin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -65,13 +65,13 @@
     .otp-input.filled { border-color: rgba(240,180,41,0.35); color: var(--accent); }
     .otp-input.error { border-color: rgba(248,113,113,0.5); box-shadow: 0 0 0 3px rgba(248,113,113,0.1); }
 
-    .timer-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; }
-    .timer-ring { width: 36px; height: 36px; position: relative; }
-    .timer-ring svg { width: 36px; height: 36px; transform: rotate(-90deg); }
+    .timer-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px; }
+    .timer-ring { width: 44px; height: 44px; position: relative; }
+    .timer-ring svg { width: 44px; height: 44px; transform: rotate(-90deg); }
     .timer-ring circle { fill: none; stroke-width: 3; }
     .timer-bg { stroke: var(--border); }
-    .timer-fg { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 88; transition: stroke-dashoffset 1s linear; }
-    .timer-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 600; }
+    .timer-fg { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 113; transition: stroke-dashoffset 1s linear; }
+    .timer-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 600; }
     .timer-label { font-size: 12px; color: var(--muted); }
 
     .btn-primary { width: 100%; height: 46px; background: var(--accent-g); border: none; border-radius: 10px; color: white; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s, transform 0.15s; }
@@ -89,11 +89,6 @@
     .back-link { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 20px; font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
     .back-link:hover { color: var(--accent); }
     .back-link svg { width: 14px; height: 14px; stroke: currentColor; }
-
-    .app-hint { margin-bottom: 24px; background: rgba(240,180,41,0.05); border: 1px solid rgba(240,180,41,0.12); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px; }
-    .app-hint svg { width: 18px; height: 18px; stroke: var(--accent); flex-shrink: 0; margin-top: 1px; }
-    .app-hint p { font-size: 12px; color: #94a3b8; line-height: 1.5; }
-    .app-hint strong { color: var(--text); }
   </style>
 </head>
 <body>
@@ -106,7 +101,7 @@
       <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
     </svg>
   </div>
-  <span class="brand">3D <span>IHack</span> Floor</span>
+  <span class="brand">MakerSpace <span>Digital Twin</span></span>
   <span class="badge">GANNON UNIVERSITY</span>
 </header>
 
@@ -121,14 +116,7 @@
         </svg>
       </div>
       <h1>Two-Factor Authentication</h1>
-      <p>Enter the 6-digit code from your<br/>authenticator app to continue.</p>
-    </div>
-
-    <div class="app-hint">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      <p>Open <strong>Google Authenticator</strong>, <strong>Authy</strong>, or any TOTP app and enter the code shown for <strong>3D IHack Floor</strong>.</p>
+      <p>Enter the 6-digit code from your<br/>email to continue.</p>
     </div>
 
     <div class="alert" id="alertBox">
@@ -147,16 +135,16 @@
       <input class="otp-input" type="text" inputmode="numeric" maxlength="1" data-index="5" />
     </div>
 
-    <!-- TOTP 30-second countdown ring -->
+    <!-- 2FA 5-minute countdown ring -->
     <div class="timer-row">
       <div class="timer-ring">
-        <svg viewBox="0 0 36 36">
-          <circle class="timer-bg" cx="18" cy="18" r="14"/>
-          <circle class="timer-fg" id="timerCircle" cx="18" cy="18" r="14"/>
+        <svg viewBox="0 0 40 40">
+          <circle class="timer-bg" cx="20" cy="20" r="18"/>
+          <circle class="timer-fg" id="timerCircle" cx="20" cy="20" r="18"/>
         </svg>
-        <div class="timer-text" id="timerText">30</div>
+        <div class="timer-text" id="timerText">5:00</div>
       </div>
-      <span class="timer-label">Code refreshes every 30 seconds</span>
+      <span class="timer-label">Code expires in 5 minutes</span>
     </div>
 
     <button class="btn-primary" id="verifyBtn" disabled>
@@ -174,9 +162,9 @@
 </div>
 
 <script>
-  // Redirect if no pre-auth token
-  const preAuthToken = sessionStorage.getItem('preAuthToken');
-  if (!preAuthToken) window.location.href = '/login';
+  // Redirect if no userEmail in session
+  const userEmail = sessionStorage.getItem('userEmail');
+  if (!userEmail) window.location.href = '/login';
 
   // OTP input management
   const inputs = Array.from(document.querySelectorAll('.otp-input'));
@@ -212,20 +200,35 @@
     });
   });
 
-  // TOTP countdown timer
+  // 5-minute countdown timer
+  const TOTAL_TIME = 300; // 5 minutes
+  const startTime = Math.floor(Date.now() / 1000);
+
   function updateTimer() {
     const now = Math.floor(Date.now() / 1000);
-    const remaining = 30 - (now % 30);
-    const circumference = 88;
-    const offset = circumference * (1 - remaining / 30);
+    const elapsed = now - startTime;
+    const remaining = Math.max(0, TOTAL_TIME - elapsed);
+    
+    const minutes = Math.floor(remaining / 60);
+    const seconds = remaining % 60;
+    const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    const circumference = 113; // 2 * pi * r (r=18)
+    const offset = circumference * (1 - remaining / TOTAL_TIME);
+    
     document.getElementById('timerCircle').style.strokeDashoffset = offset;
-    document.getElementById('timerText').textContent = remaining;
-    if (remaining <= 5) {
+    document.getElementById('timerText').textContent = timeString;
+    
+    if (remaining <= 30) {
       document.getElementById('timerCircle').style.stroke = '#f87171';
       document.getElementById('timerText').style.color = '#f87171';
     } else {
       document.getElementById('timerCircle').style.stroke = '#F0B429';
       document.getElementById('timerText').style.color = '#F0B429';
+    }
+
+    if (remaining === 0) {
+      document.getElementById('timerText').textContent = "EXP";
     }
   }
   updateTimer();
@@ -259,11 +262,11 @@
     alertBox.className = 'alert';
 
     try {
-      const res = await fetch('/api/auth/verify-2fa', {
+      const res = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ token: code, preAuthToken })
+        body: JSON.stringify({ Code: code, Email: userEmail })
       });
       const data = await res.json();
 
@@ -275,7 +278,7 @@
         return;
       }
 
-      sessionStorage.removeItem('preAuthToken');
+      sessionStorage.removeItem('userEmail');
       if (data.token) localStorage.setItem('authToken', data.token);
       showAlert('Authentication successful!', 'success');
       setTimeout(() => { window.location.href = '/dashboard'; }, 800);
