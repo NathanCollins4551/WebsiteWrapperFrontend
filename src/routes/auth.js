@@ -30,9 +30,9 @@ function normalizeAuthPayload(body) {
 /**
  * Backend call helper
  */
-async function callBackend(path, method, body) {
+async function callBackend(path, method, body, clientCookies = {}) {
   try {
-    const url = `${BACKEND_URL}/Auth${path.startsWith('/') ? path : `/${path}`}`;
+    const url = `${BACKEND_URL}/api/auth${path.startsWith('/') ? path : `/${path}`}`;
 
     console.log('\n==============================');
     console.log('➡️ BACKEND_URL:', BACKEND_URL);
@@ -41,16 +41,23 @@ async function callBackend(path, method, body) {
     console.log('➡️ PAYLOAD:', body);
     console.log('==============================\n');
 
+    // Build Cookie header to send to backend
+    const cookieHeader = Object.entries(clientCookies)
+      .map(([name, value]) => `${name}=${value}`)
+      .join('; ');
+
     const response = await fetch(url, {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Cookie': cookieHeader
       },
       body: body ? JSON.stringify(body) : undefined
     });
 
     const text = await response.text();
+    const setCookie = response.headers.get('set-cookie');
 
     console.log('⬅️ STATUS:', response.status);
     console.log('⬅️ RESPONSE:', text);
@@ -65,7 +72,8 @@ async function callBackend(path, method, body) {
     return {
       ok: response.ok,
       status: response.status,
-      data
+      data,
+      setCookie
     };
 
   } catch (err) {
@@ -90,7 +98,7 @@ async function callBackend(path, method, body) {
 router.post('/register', async (req, res) => {
   const payload = normalizeAuthPayload(req.body);
 
-  const result = await callBackend('/signup', 'POST', payload);
+  const result = await callBackend('/signup', 'POST', payload, req.cookies);
 
   if (!result.ok) {
     console.error('❌ REGISTER FAILED:', result.data);
@@ -106,11 +114,16 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const payload = normalizeAuthPayload(req.body);
 
-  const result = await callBackend('/login', 'POST', payload);
+  const result = await callBackend('/login', 'POST', payload, req.cookies);
 
   if (!result.ok) {
     console.error('❌ LOGIN FAILED:', result.data);
     return res.status(result.status).json(result.data);
+  }
+
+  // Forward backend cookies (like trusted_device) if they exist
+  if (result.setCookie) {
+    res.setHeader('Set-Cookie', result.setCookie);
   }
 
   res.json(result.data);
@@ -120,14 +133,19 @@ router.post('/login', async (req, res) => {
  * VERIFY 2FA
  */
 router.post('/verify', async (req, res) => {
-  const result = await callBackend('/verify-2fa', 'POST', req.body);
+  const result = await callBackend('/verify-2fa', 'POST', req.body, req.cookies);
 
   if (!result.ok) {
     console.error('❌ VERIFY FAILED:', result.data);
     return res.status(result.status).json(result.data);
   }
 
-  // If successful, set cookie for the frontend
+  // Forward backend cookies (like trusted_device) if they exist
+  if (result.setCookie) {
+    res.setHeader('Set-Cookie', result.setCookie);
+  }
+
+  // If successful, set session token cookie for the frontend
   if (result.data.token) {
     res.cookie('token', result.data.token, {
       httpOnly: true,
