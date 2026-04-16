@@ -11,7 +11,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
-// GLOBAL HEADER ENFORCEMENT
+// 1. GLOBAL HEADER ENFORCEMENT
+// Ensures Cross-Origin Isolation for the entire site
 app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
@@ -32,14 +33,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// 1. Specific Unity WebGL routes (MUST BE BEFORE GENERAL STATIC)
-// TEMPORARILY DISABLED AUTH FOR DIAGNOSIS
+// 2. Unity Static Assets (Protected)
 app.use('/unity', (req, res, next) => {
-  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  // Check auth but allow the index page to handle its own redirect logic
+  const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    if (req.path === '/' || req.path === '/index.html' || req.path === '') {
+      return res.redirect('/login');
+    }
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
   next();
-}, express.static(path.join(__dirname, '../public/unity'), {
+}, requireAuth, express.static(path.join(__dirname, '../public/unity'), {
   setHeaders: (res, filePath) => {
     res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
@@ -58,45 +63,33 @@ app.use('/unity', (req, res, next) => {
   }
 }));
 
-// 2. API routes
+// 3. API routes
 app.use('/api/auth', authRoutes);
 
-// 3. General static files
+// 4. General static files
 app.use(express.static(path.join(__dirname, '../public'), {
   setHeaders: (res, filePath) => {
     res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-
-    if (filePath.toLowerCase().endsWith('.unityweb')) {
-      res.setHeader('Content-Encoding', 'br');
-      if (filePath.toLowerCase().endsWith('.wasm.unityweb')) {
-        res.setHeader('Content-Type', 'application/wasm');
-      } else if (filePath.toLowerCase().endsWith('.framework.js.unityweb')) {
-        res.setHeader('Content-Type', 'application/javascript');
-      } else if (filePath.toLowerCase().endsWith('.data.unityweb')) {
-        res.setHeader('Content-Type', 'application/octet-stream');
-      }
-    }
   }
 }));
 
-// 4. Public HTML routes
-app.get('/', (_req, res) => res.sendFile(path.join(__dirname, '../public/login.html')));
-app.get('/login', (_req, res) => res.sendFile(path.join(__dirname, '../public/login.html')));
+// 5. Public HTML routes
+app.get(['/', '/login'], (_req, res) => res.sendFile(path.join(__dirname, '../public/login.html')));
 app.get('/register', (_req, res) => res.sendFile(path.join(__dirname, '../public/register.html')));
 app.get('/verify-2fa', (_req, res) => res.sendFile(path.join(__dirname, '../public/verify-2fa.html')));
 
-// 5. Protected HTML routes
+// 6. Protected HTML routes
 app.get('/setup-2fa', requireAuth, (_req, res) => res.sendFile(path.join(__dirname, '../public/setup-2fa.html')));
 app.get('/dashboard', requireAuth, (_req, res) => res.sendFile(path.join(__dirname, '../public/dashboard.html')));
 
-// 6. SPA fallback for /unity (ONLY for the index page, not assets)
-app.get(['/unity', '/unity/index.html'], (req, res) => {
+// 7. SPA fallback for /unity (ONLY for the index page, not assets)
+app.get(['/unity', '/unity/index.html'], requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/unity/index.html'));
 });
 
-// 7. 404 handler
+// 8. 404 handler
 app.use((_req, res) => res.status(404).sendFile(path.join(__dirname, '../public/login.html')));
 
 // Start server
