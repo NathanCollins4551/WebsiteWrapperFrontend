@@ -126,6 +126,15 @@ router.post('/login', async (req, res) => {
     res.setHeader('Set-Cookie', result.setCookie);
   }
 
+  // If successful and a token is returned (trusted device bypass), set the session token cookie
+  if (result.data.token) {
+    res.cookie('token', result.data.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 3600000 // 1 hour
+    });
+  }
+
   res.json(result.data);
 });
 
