@@ -28,7 +28,7 @@ app.use(helmet({
       workerSrc: ["'self'", 'blob:'],
     }
   },
-  crossOriginEmbedderPolicy: { policy: "require-corp" },
+  crossOriginEmbedderPolicy: true, // Default is require-corp
   crossOriginOpenerPolicy: { policy: "same-origin" },
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
@@ -47,14 +47,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // 1. Specific Unity WebGL routes (MUST BE BEFORE GENERAL STATIC)
-// Set headers BEFORE authentication check so even error responses (401) have them, 
-// preventing COEP blocks in the parent frame.
 app.use('/unity', (req, res, next) => {
-  res.set('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 }, requireAuth, express.static(path.join(__dirname, '../public/unity'), {
   setHeaders: (res, filePath) => {
+    // Explicitly set COEP and CORP for every file served from /unity
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    
     if (filePath.toLowerCase().endsWith('.unityweb')) {
       res.setHeader('Content-Encoding', 'br');
       if (filePath.toLowerCase().endsWith('.wasm.unityweb')) {
@@ -89,8 +91,8 @@ app.get('/dashboard', requireAuth, (_req, res) => res.sendFile(path.join(__dirna
 
 // 6. SPA fallback for /unity/* (for deep linking)
 app.get('/unity*', (req, res, next) => {
-  res.set('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 }, requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/unity/index.html'));
