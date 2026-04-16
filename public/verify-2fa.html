@@ -266,7 +266,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ Code: code, Email: userEmail })
+        body: JSON.stringify({ Code: code, Email: userEmail, RememberMe: rememberMe })
       });
       const data = await res.json();
 
@@ -279,6 +279,7 @@
       }
 
       sessionStorage.removeItem('userEmail');
+      sessionStorage.removeItem('rememberMe');
       if (data.token) localStorage.setItem('authToken', data.token);
       showAlert('Authentication successful!', 'success');
       setTimeout(() => { window.location.href = '/dashboard'; }, 800);
@@ -292,6 +293,10 @@
 
   // Focus first input on load
   inputs[0].focus();
+</script>
+</body>
+</html>
+ inputs[0].focus();
 </script>
 </body>
 </html>
