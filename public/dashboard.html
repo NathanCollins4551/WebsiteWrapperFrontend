@@ -370,44 +370,13 @@
 
   const UNITY_BUILD_URL = '/unity/index.html'; // ← Change to your WebGL build path
 
-  const LOADING_STEPS = [
-    { pct: 10, text: 'Initializing WebGL context…' },
-    { pct: 25, text: 'Loading 3D assets…' },
-    { pct: 45, text: 'Connecting to live data stream…' },
-    { pct: 65, text: 'Loading production floor scene…' },
-    { pct: 80, text: 'Syncing telemetry…' },
-    { pct: 95, text: 'Finalizing…' },
-    { pct: 100, text: 'Ready!' },
-  ];
-
+  // Launch Unity
   document.getElementById('launchBtn').addEventListener('click', () => {
     launchOverlay.classList.add('hidden');
-    loadingOverlay.classList.add('show');
-    simulateLoad();
+    // Launch Unity immediately
+    unityIframe.src = UNITY_BUILD_URL + '?t=' + Date.now();
+    unityIframe.classList.add('loaded');
   });
-
-  function simulateLoad() {
-    let step = 0;
-    function next() {
-      if (step >= LOADING_STEPS.length) {
-        loadFill.style.width = '100%';
-        loadPct.textContent = '100%';
-        setTimeout(() => {
-          loadingOverlay.classList.remove('show');
-          // Cache-busting to force header refresh
-          unityIframe.src = UNITY_BUILD_URL + '?t=' + Date.now();
-          unityIframe.classList.add('loaded');
-        }, 400);
-        return;
-      }
-      const { pct, text } = LOADING_STEPS[step++];
-      loadFill.style.width = pct + '%';
-      loadPct.textContent = pct + '%';
-      loadingStatus.textContent = text;
-      setTimeout(next, 400 + Math.random() * 300);
-    }
-    next();
-  }
 
   // Fullscreen
   document.getElementById('fullscreenBtn').addEventListener('click', () => {
