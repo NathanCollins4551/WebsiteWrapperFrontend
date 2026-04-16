@@ -258,6 +258,8 @@
     const code = getCode();
     if (code.length !== 6) return;
 
+    const rememberMe = sessionStorage.getItem('rememberMe') === 'true';
+
     setLoading(true);
     alertBox.className = 'alert';
 
@@ -293,10 +295,6 @@
 
   // Focus first input on load
   inputs[0].focus();
-</script>
-</body>
-</html>
- inputs[0].focus();
 </script>
 </body>
 </html>
