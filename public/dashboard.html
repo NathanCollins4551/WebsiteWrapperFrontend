@@ -393,7 +393,8 @@
         loadPct.textContent = '100%';
         setTimeout(() => {
           loadingOverlay.classList.remove('show');
-          unityIframe.src = UNITY_BUILD_URL;
+          // Cache-busting to force header refresh
+          unityIframe.src = UNITY_BUILD_URL + '?t=' + Date.now();
           unityIframe.classList.add('loaded');
         }, 400);
         return;
