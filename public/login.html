@@ -520,6 +520,12 @@
   const spinner   = document.getElementById('spinner');
   const btnText   = document.getElementById('btnText');
   const btnArrow  = document.getElementById('btnArrow');
+  const rememberCheckbox = document.getElementById('remember');
+
+  // Initialize checkbox state from localStorage
+  if (rememberCheckbox) {
+    rememberCheckbox.checked = localStorage.getItem('rememberMePreference') === 'true';
+  }
 
   function showError(msg) {
     alertBox.className = 'alert error show';
@@ -543,6 +549,9 @@
     const email = emailInput ? emailInput.value.trim() : '';
     const password = passwordInput ? passwordInput.value : '';
     const rememberMe = rememberCheckbox ? rememberCheckbox.checked : false;
+
+    // Save preference for next time
+    localStorage.setItem('rememberMePreference', rememberMe);
 
     alertBox.className = 'alert';
 
