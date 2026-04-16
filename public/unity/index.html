@@ -23,7 +23,17 @@
     <script>
       window.addEventListener("load", function () {
         if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.register("ServiceWorker.js");
+          console.log("[Unity Index] Attempting to register Service Worker...");
+          // Append timestamp to force registration update
+          navigator.serviceWorker.register("ServiceWorker.js?v=" + Date.now())
+            .then(reg => {
+              console.log("[Unity Index] Service Worker registered successfully:", reg.scope);
+              // Force update check
+              reg.update();
+            })
+            .catch(err => console.error("[Unity Index] Service Worker registration failed:", err));
+        } else {
+          console.warn("[Unity Index] Service Workers are not supported in this browser.");
         }
       });
 
