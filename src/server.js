@@ -33,18 +33,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // 1. Specific Unity WebGL routes (MUST BE BEFORE GENERAL STATIC)
-// Specialized auth for unity assets to prevent "Unexpected token <" (HTML instead of JS)
+// TEMPORARILY DISABLED AUTH FOR DIAGNOSIS
 app.use('/unity', (req, res, next) => {
-  // Check auth but don't redirect for assets
-  const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
-  if (!token) {
-    if (req.path === '/' || req.path === '/index.html' || req.path === '') {
-      return res.status(401).sendFile(path.join(__dirname, '../public/login.html'));
-    }
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  // We'll keep the headers but skip requireAuth for now
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
-}, requireAuth, express.static(path.join(__dirname, '../public/unity'), {
+}, express.static(path.join(__dirname, '../public/unity'), {
   setHeaders: (res, filePath) => {
     res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
@@ -83,7 +79,7 @@ app.get('/unity*', (req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
-}, requireAuth, (req, res) => {
+}, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/unity/index.html'));
 });
 
