@@ -28,10 +28,17 @@ app.use(helmet({
       workerSrc: ["'self'", 'blob:'],
     }
   },
-  crossOriginEmbedderPolicy: true, // Default is require-corp
+  crossOriginEmbedderPolicy: true,
   crossOriginOpenerPolicy: { policy: "same-origin" },
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
+
+// Global middleware to ensure COOP and COEP are always set, even if helmet is partially bypassed
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.setHeader('Cross-Origin-OpenerPolicy', 'same-origin');
+  next();
+});
 
 const corsOrigin = process.env.ALLOWED_ORIGIN || [
   'http://localhost:3000',
