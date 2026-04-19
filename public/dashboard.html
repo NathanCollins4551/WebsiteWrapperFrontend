@@ -465,7 +465,7 @@
          <!-- Map Container -->
          <div id="tracking-map-container" style="flex: 1; position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
            <img src="/assets/makerspace_zones_with_key.png" alt="MakerSpace Zones Map" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-           
+           <canvas id="personnelCanvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
            <!-- Overlays will be injected here later -->
          </div>
        </div>
@@ -1098,6 +1098,51 @@
 
   // Initial load
   loadPrefs();
+</script>
+
+<script src="/assets/personnel-visualizer.js"></script>
+<script>
+  // --- Personnel Tracking Implementation ---
+  let visualizer;
+  
+  // Wait for image to load to ensure correct scaling
+  const mapImg = document.querySelector('#tracking-map-container img');
+  if (mapImg.complete) {
+    initVisualizer();
+  } else {
+    mapImg.onload = initVisualizer;
+  }
+
+  function initVisualizer() {
+    visualizer = new PersonnelVisualizer('personnelCanvas', 'tracking-map-container');
+    
+    // Start simulation after init
+    setTimeout(simulatePersonnelMovement, 1000);
+    setInterval(simulatePersonnelMovement, 8000);
+  }
+
+  function simulatePersonnelMovement() {
+    if (!visualizer) return;
+
+    const counts = {
+      zone1: Math.floor(Math.random() * 5),
+      zone2: Math.floor(Math.random() * 4),
+      zone3: Math.floor(Math.random() * 5),
+      zone4: Math.floor(Math.random() * 3)
+    };
+    
+    visualizer.updateCounts(counts);
+    
+    // Update the UI boxes on the left
+    const zoneBoxes = document.querySelectorAll('#human-tracking-page .instruction-card');
+    // The boxes are: [header_card, z1, z2, z3, z4]
+    if (zoneBoxes.length >= 5) {
+      zoneBoxes[1].querySelector('div:nth-child(2)').innerText = counts.zone1;
+      zoneBoxes[2].querySelector('div:nth-child(2)').innerText = counts.zone2;
+      zoneBoxes[3].querySelector('div:nth-child(2)').innerText = counts.zone3;
+      zoneBoxes[4].querySelector('div:nth-child(2)').innerText = counts.zone4;
+    }
+  }
 </script>
 </body>
 </html>
