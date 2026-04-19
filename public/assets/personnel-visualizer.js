@@ -13,6 +13,9 @@ class PersonnelVisualizer {
         // Logical resolution
         this.baseWidth = 2752;
         this.baseHeight = 1536;
+
+        // Debug mode: Set to true to see the zone polygons
+        this.debug = false; 
         
         // Entry/Exit
         this.entryExit = { x: 2098, y: 411 };
@@ -55,21 +58,22 @@ class PersonnelVisualizer {
     }
 
     resize() {
-        const rect = this.container.getBoundingClientRect();
         const img = this.container.querySelector('img');
+        if (!img) return;
+
+        // Get the actual displayed dimensions of the image content
+        const rect = img.getBoundingClientRect();
+        const containerRect = this.container.getBoundingClientRect();
+
+        // Match canvas size to the displayed image size precisely
+        this.canvas.width = rect.width;
+        this.canvas.height = rect.height;
         
-        if (img && img.complete) {
-            // Match canvas size to the displayed image size precisely
-            const displayWidth = img.clientWidth;
-            const displayHeight = img.clientHeight;
-            this.canvas.width = displayWidth;
-            this.canvas.height = displayHeight;
-            this.scale = displayWidth / this.baseWidth;
-        } else {
-            this.canvas.width = rect.width;
-            this.canvas.height = rect.height;
-            this.scale = rect.width / this.baseWidth;
-        }
+        // Position canvas exactly over the image (handling centering)
+        this.canvas.style.left = (rect.left - containerRect.left) + 'px';
+        this.canvas.style.top = (rect.top - containerRect.top) + 'px';
+        
+        this.scale = rect.width / this.baseWidth;
     }
 
     isPointInPoly(poly, pt) {
@@ -210,6 +214,24 @@ class PersonnelVisualizer {
     animate() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
+        // Debug: Draw Zones
+        if (this.debug) {
+            Object.keys(this.zones).forEach(id => {
+                const z = this.zones[id];
+                this.ctx.beginPath();
+                z.poly.forEach((p, i) => {
+                    if (i === 0) this.ctx.moveTo(p.x * this.scale, p.y * this.scale);
+                    else this.ctx.lineTo(p.x * this.scale, p.y * this.scale);
+                });
+                this.ctx.closePath();
+                this.ctx.strokeStyle = z.restricted ? 'rgba(255,0,0,0.5)' : 'rgba(240,180,41,0.5)';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+                this.ctx.fillStyle = z.restricted ? 'rgba(255,0,0,0.1)' : 'rgba(240,180,41,0.1)';
+                this.ctx.fill();
+            });
+        }
+
         const now = Date.now();
         const dt = now - this.lastUpdateTime;
         this.lastUpdateTime = now;

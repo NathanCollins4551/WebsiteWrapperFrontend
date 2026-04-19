@@ -1115,6 +1115,7 @@
 
   function initVisualizer() {
     visualizer = new PersonnelVisualizer('personnelCanvas', 'tracking-map-container');
+    visualizer.debug = true; // Temporary enable for alignment verification
     
     // Start simulation after init
     setTimeout(simulatePersonnelMovement, 1000);
