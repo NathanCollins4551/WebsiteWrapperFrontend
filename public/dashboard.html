@@ -70,8 +70,11 @@
     /* Main content */
     .main { overflow-y: auto; background: var(--bg); display: flex; flex-direction: column; }
 
+    /* Page sections */
+    .page-section { display: none; flex-direction: column; padding: 20px; gap: 16px; min-height: 0; flex: 1; }
+    .page-section.active { display: flex; }
+
     /* Unity frame area */
-    .unity-section { flex: 1; display: flex; flex-direction: column; padding: 20px; gap: 16px; min-height: 0; }
     .unity-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .section-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
     .section-title svg { width: 18px; height: 18px; stroke: var(--accent); }
@@ -165,7 +168,7 @@
       <span class="logo-brand">MakerSpace <span>Digital Twin</span></span>
     </div>
     <div class="nav-divider"></div>
-    <span class="nav-pill">Production Floor</span>
+    <span class="nav-pill" id="activePagePill">Digital Twin</span>
 
     <div class="nav-right">
       <div class="user-chip" id="userChip">
@@ -182,62 +185,43 @@
   </nav>
 
   <!-- Sidebar -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-section">
-      <div class="sidebar-label">Operations</div>
-      <a class="nav-item active" href="#">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <div class="sidebar-label">Visualization</div>
+      <a class="nav-item active" href="#" data-page="digital-twin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
         </svg>
-        Production Floor
+        Digital Twin
       </a>
-      <a class="nav-item" href="#">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      <a class="nav-item" href="#" data-page="human-tracking">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
-        Live Metrics
-        <span class="badge-count">3</span>
-      </a>
-      <a class="nav-item" href="#">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-        </svg>
-        Inventory
-      </a>
-      <a class="nav-item" href="#">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
-        </svg>
-        YOLO Tracking
+        Human Tracking
       </a>
     </div>
 
     <div class="sidebar-section">
-      <div class="sidebar-label">Analysis</div>
-      <a class="nav-item" href="#">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      <div class="sidebar-label">Support</div>
+      <a class="nav-item" href="#" data-page="how-to-use">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
-        Reports
+        How To Use
       </a>
-      <a class="nav-item" href="#">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      <a class="nav-item" href="#" data-page="calculators">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/>
         </svg>
-        Job History
+        Calculators
       </a>
     </div>
 
     <div class="sidebar-section">
-      <div class="sidebar-label">Settings</div>
-      <a class="nav-item" href="/setup-2fa.html">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
-        </svg>
-        Manage 2FA
-      </a>
-      <a class="nav-item" href="#">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <div class="sidebar-label">System</div>
+      <a class="nav-item" href="#" data-page="preferences">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"/>
         </svg>
         Preferences
@@ -257,8 +241,8 @@
 
   <!-- Main -->
   <main class="main">
-    <!-- Unity section -->
-    <div class="unity-section">
+    <!-- Digital Twin Page -->
+    <div id="digital-twin-page" class="page-section active">
       <div class="unity-header">
         <div class="section-title">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -326,6 +310,72 @@
         ></iframe>
       </div>
     </div>
+
+    <!-- Human Tracking Page -->
+    <div id="human-tracking-page" class="page-section">
+       <div class="section-title">Human Tracking</div>
+       <p style="color: var(--muted);">Real-time personnel tracking and safety monitoring.</p>
+       <div style="flex: 1; border: 1px dashed var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--surface);">
+         <span style="color: var(--muted); font-size: 13px;">Human tracking data stream will appear here...</span>
+       </div>
+    </div>
+
+    <!-- How To Use Page -->
+    <div id="how-to-use-page" class="page-section">
+       <div class="section-title">How To Use</div>
+       <div style="background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border); max-width: 600px;">
+         <h4 style="margin-bottom: 12px; color: var(--accent);">Digital Twin Controls</h4>
+         <ul style="color: var(--text); line-height: 1.6; margin-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+           <li><strong>WASD / Arrow Keys:</strong> Move the camera</li>
+           <li><strong>Mouse Drag:</strong> Rotate view</li>
+           <li><strong>Scroll Wheel:</strong> Zoom in/out</li>
+           <li><strong>Left Click:</strong> Select machines for details</li>
+           <li><strong>R Key:</strong> Reset camera position</li>
+         </ul>
+       </div>
+    </div>
+
+    <!-- Calculators Page -->
+    <div id="calculators-page" class="page-section">
+       <div class="section-title">Calculators</div>
+       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px;">
+         <div style="background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+           <h5 style="color: var(--accent); margin-bottom: 8px;">OEE Calculator</h5>
+           <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Overall Equipment Effectiveness</p>
+           <button class="btn-sm primary">Launch Calculator</button>
+         </div>
+         <div style="background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+           <h5 style="color: var(--accent); margin-bottom: 8px;">Cycle Time Calculator</h5>
+           <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Calculate production efficiency</p>
+           <button class="btn-sm primary">Launch Calculator</button>
+         </div>
+       </div>
+    </div>
+
+    <!-- Preferences Page -->
+    <div id="preferences-page" class="page-section">
+       <div class="section-title">Preferences</div>
+       <div style="background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 20px; max-width: 600px;">
+         <div style="display: flex; align-items: center; justify-content: space-between;">
+           <div>
+             <div style="font-weight: 500;">Dark Mode</div>
+             <div style="font-size: 12px; color: var(--muted);">Switch between dark and light themes</div>
+           </div>
+           <div style="width: 40px; height: 20px; background: var(--accent); border-radius: 10px; position: relative; cursor: pointer;">
+             <div style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px;"></div>
+           </div>
+         </div>
+         <div style="display: flex; align-items: center; justify-content: space-between;">
+           <div>
+             <div style="font-weight: 500;">Auto-Reload</div>
+             <div style="font-size: 12px; color: var(--muted);">Automatically refresh data every 5 minutes</div>
+           </div>
+           <div style="width: 40px; height: 20px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; position: relative; cursor: pointer;">
+             <div style="width: 16px; height: 16px; background: var(--muted); border-radius: 50%; position: absolute; top: 1px; left: 2px;"></div>
+           </div>
+         </div>
+       </div>
+    </div>
   </main>
 </div>
 
@@ -352,6 +402,31 @@
     } catch {}
   }
   loadUser();
+
+  // Page switching
+  const navItems = document.querySelectorAll('.nav-item');
+  const pageSections = document.querySelectorAll('.page-section');
+  const activePagePill = document.getElementById('activePagePill');
+
+  navItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      const page = item.getAttribute('data-page');
+      if (!page) return;
+      e.preventDefault();
+
+      // Update nav items
+      navItems.forEach(nav => nav.classList.remove('active'));
+      item.classList.add('active');
+
+      // Update sections
+      pageSections.forEach(section => section.classList.remove('active'));
+      const targetPage = document.getElementById(`${page}-page`);
+      if (targetPage) targetPage.classList.add('active');
+
+      // Update top pill
+      activePagePill.textContent = item.textContent.trim();
+    });
+  });
 
   // Logout
   document.getElementById('logoutBtn').addEventListener('click', async () => {
