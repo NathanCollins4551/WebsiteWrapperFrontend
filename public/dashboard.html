@@ -308,7 +308,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
-        Human Tracking
+        Personnel Tracking
       </a>
     </div>
 
@@ -421,7 +421,7 @@
       </div>
     </div>
 
-    <!-- Human Tracking Page -->
+    <!-- Personnel Tracking Page -->
     <div id="human-tracking-page" class="page-section">
        <div class="section-title">
          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; stroke: var(--accent);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -430,7 +430,7 @@
        
        <div class="instruction-card" style="margin-bottom: 16px;">
          <p style="color: var(--text); font-size: 13px; line-height: 1.6;">
-           Our advanced human tracking system utilizes overhead cameras paired with computer vision software to monitor personnel movement in real-time. The MakerSpace is divided into <strong>4 distinct zones</strong>.
+           Our advanced personnel tracking system utilizes overhead cameras paired with computer vision software to monitor personnel movement in real-time. The MakerSpace is divided into <strong>4 distinct zones</strong>.
          </p>
          <p style="color: var(--muted); font-size: 12px; margin-top: 8px;">
            <span style="color: var(--danger); font-weight: 600;">● NOTE:</span> Zone 4 is a <strong>restricted area</strong>. Any unauthorized entry will trigger an immediate system alert.
@@ -474,7 +474,8 @@
        <div class="sub-nav">
          <div class="sub-nav-item active" onclick="showHowTo('controls')">Controls</div>
          <div class="sub-nav-item" onclick="showHowTo('convai')">Using Convai</div>
-         <div class="sub-nav-item" onclick="showHowTo('human-tracking-docs')">Human Tracking</div>
+         <div class="sub-nav-item" onclick="showHowTo('human-tracking-docs')">Personnel Tracking</div>
+         <div class="sub-nav-item" onclick="showHowTo('object-tracking-docs')">Object Tracking</div>
        </div>
 
        <!-- Controls Content -->
@@ -607,11 +608,19 @@
          </div>
        </div>
 
-       <!-- Human Tracking Content -->
+       <!-- Personnel Tracking Content -->
        <div id="human-tracking-docs-content" class="how-to-content">
          <div class="instruction-card">
-           <h4 style="margin-bottom: 12px; color: var(--accent);">Using Human Tracking</h4>
+           <h4 style="margin-bottom: 12px; color: var(--accent);">Using Personnel Tracking</h4>
            <p style="color: var(--muted); font-size: 13px;">Safety monitoring and personnel tracking documentation coming soon...</p>
+         </div>
+       </div>
+
+       <!-- Object Tracking Content -->
+       <div id="object-tracking-docs-content" class="how-to-content">
+         <div class="instruction-card">
+           <h4 style="margin-bottom: 12px; color: var(--accent);">Using Object Tracking</h4>
+           <p style="color: var(--muted); font-size: 13px;">Inventory and equipment tracking documentation coming soon...</p>
          </div>
        </div>
     </div>
@@ -1010,10 +1019,10 @@
       item.classList.toggle('active', item.innerText.toLowerCase().includes(page.replace(/-/g, ' ')));
     });
 
-    // Handle Human Tracking special case for matching
+    // Handle Personnel Tracking special case for matching
     if (page === 'human-tracking-docs') {
       document.querySelectorAll('.sub-nav-item').forEach(item => {
-        item.classList.toggle('active', item.innerText.toLowerCase() === 'human tracking');
+        item.classList.toggle('active', item.innerText.toLowerCase() === 'personnel tracking');
       });
     }
 
