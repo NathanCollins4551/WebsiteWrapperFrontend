@@ -220,7 +220,7 @@
     .control-info h5 { font-size: 13px; margin-bottom: 4px; color: var(--text); }
     .control-info p { font-size: 12px; color: var(--muted); }
     .step-img { 
-      width: 100%; max-width: 500px; border-radius: 8px; border: 1px solid var(--border); 
+      width: 100%; border-radius: 8px; border: 1px solid var(--border); 
       margin-top: 16px; background: var(--surface2);
     }
     .how-to-content { display: none; }
@@ -457,7 +457,77 @@
        <div id="convai-content" class="how-to-content">
          <div class="instruction-card">
            <h4 style="margin-bottom: 12px; color: var(--accent);">Using Convai AI</h4>
-           <p style="color: var(--muted); font-size: 13px;">Advanced AI interaction documentation coming soon...</p>
+           <p style="color: var(--text); font-size: 13px; margin-bottom: 16px;">
+             The MakerSpace Digital Twin features an advanced AI Assistant powered by Convai. You can interact with the environment and get information through natural language.
+           </p>
+           
+           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+             <div class="control-item">
+               <div class="key-cap">T</div>
+               <div class="control-info">
+                 <h5>Voice Interaction</h5>
+                 <p>Hold T to speak. Release to send your voice command.</p>
+               </div>
+             </div>
+             <div class="control-item">
+               <div class="key-cap">↵</div>
+               <div class="control-info">
+                 <h5>Text Interaction</h5>
+                 <p>Press Enter to open the chat box, type your prompt, and press Enter again.</p>
+               </div>
+             </div>
+           </div>
+
+           <div class="step-img">
+             <img src="/assets/ConvaiExamplePhoto.png" alt="Convai AI Interaction" style="width: 100%; border-radius: 7px;" onerror="this.src='https://placehold.co/800x400/0d1420/F0B429?text=Convai+AI+Interaction+Placeholder'">
+           </div>
+         </div>
+
+         <div class="instruction-card">
+           <h4 style="margin-bottom: 16px; color: var(--accent);">Example Prompts</h4>
+           <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px;">
+             <li style="background: var(--surface2); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">"What is the current status of the Bambu D6 printer?"</li>
+             <li style="background: var(--surface2); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">"Can you tell me about the safety protocols for the CNC machine?"</li>
+             <li style="background: var(--surface2); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">"Where is the nearest fire extinguisher?"</li>
+             <li style="background: var(--surface2); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">"Who is currently authorized to use the Laser Cutter?"</li>
+           </ul>
+         </div>
+
+         <div class="instruction-card">
+           <h4 style="margin-bottom: 16px; color: var(--accent);">AI Actions</h4>
+           <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">The AI assistant can perform physical actions within the digital twin environment:</p>
+           
+           <div style="display: flex; flex-direction: column; gap: 16px;">
+             <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
+               <h5 style="color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                 <span style="color: var(--accent);">●</span> "Show me..."
+               </h5>
+               <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">The AI will walk to the specified machine and highlight it for you.</p>
+               <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); background: rgba(240,180,41,0.05); padding: 8px; border-radius: 6px;">
+                 Prompt: "Show me Bambu D6 printer"
+               </div>
+             </div>
+
+             <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
+               <h5 style="color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                 <span style="color: var(--accent);">●</span> "Move to..."
+               </h5>
+               <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Instruct the AI to navigate to a specific area or workstation.</p>
+               <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); background: rgba(240,180,41,0.05); padding: 8px; border-radius: 6px;">
+                 Prompt: "Move to the assembly table"
+               </div>
+             </div>
+
+             <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
+               <h5 style="color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                 <span style="color: var(--accent);">●</span> "Activate dashboard"
+               </h5>
+               <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Open the detailed data view for a machine through voice command.</p>
+               <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); background: rgba(240,180,41,0.05); padding: 8px; border-radius: 6px;">
+                 Prompt: "Activate dashboard for the CNC Mill"
+               </div>
+             </div>
+           </div>
          </div>
        </div>
 
