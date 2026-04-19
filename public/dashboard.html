@@ -193,6 +193,38 @@
     }
     .calc-result-val { font-size: 24px; font-weight: 700; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
     .calc-help-text { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 16px; }
+
+    /* How To Use Styles */
+    .sub-nav { display: flex; gap: 24px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .sub-nav-item { 
+      padding: 12px 4px; font-size: 13px; font-weight: 500; color: var(--muted); 
+      cursor: pointer; position: relative; transition: color 0.2s;
+    }
+    .sub-nav-item:hover { color: var(--text); }
+    .sub-nav-item.active { color: var(--accent); }
+    .sub-nav-item.active::after { 
+      content: ''; position: absolute; bottom: -1px; left: 0; right: 0; 
+      height: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent);
+    }
+    .instruction-card { 
+      background: var(--surface); border: 1px solid var(--border); 
+      border-radius: 12px; padding: 24px; margin-bottom: 20px;
+    }
+    .control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+    .control-item { display: flex; align-items: flex-start; gap: 12px; }
+    .key-cap { 
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; 
+      padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; 
+      color: var(--accent); box-shadow: 0 2px 0 var(--border); min-width: 32px; text-align: center;
+    }
+    .control-info h5 { font-size: 13px; margin-bottom: 4px; color: var(--text); }
+    .control-info p { font-size: 12px; color: var(--muted); }
+    .step-img { 
+      width: 100%; max-width: 500px; border-radius: 8px; border: 1px solid var(--border); 
+      margin-top: 16px; background: var(--surface2);
+    }
+    .how-to-content { display: none; }
+    .how-to-content.active { display: block; }
   </style>
 </head>
 <body>
@@ -361,22 +393,86 @@
 
     <!-- How To Use Page -->
     <div id="how-to-use-page" class="page-section">
-       <div class="section-title">How To Use</div>
-       <div style="background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border); max-width: 600px;">
-         <h4 style="margin-bottom: 12px; color: var(--accent);">Digital Twin Controls</h4>
-         <ul style="color: var(--text); line-height: 1.6; margin-left: 20px; display: flex; flex-direction: column; gap: 8px;">
-           <li><strong>WASD / Arrow Keys:</strong> Move the camera</li>
-           <li><strong>Mouse Drag:</strong> Rotate view</li>
-           <li><strong>Scroll Wheel:</strong> Zoom in/out</li>
-           <li><strong>Left Click:</strong> Select machines for details</li>
-           <li><strong>R Key:</strong> Reset camera position</li>
-         </ul>
+       <div class="section-title">User Documentation</div>
+       
+       <div class="sub-nav">
+         <div class="sub-nav-item active" onclick="showHowTo('controls')">Controls</div>
+         <div class="sub-nav-item" onclick="showHowTo('convai')">Using Convai</div>
+         <div class="sub-nav-item" onclick="showHowTo('human-tracking-docs')">Human Tracking</div>
+       </div>
+
+       <!-- Controls Content -->
+       <div id="controls-content" class="how-to-content active">
+         <div class="instruction-card">
+           <h4 style="margin-bottom: 20px; color: var(--accent);">Digital Twin Controls</h4>
+           <div class="control-grid">
+             <div class="control-item">
+               <div class="key-cap">WASD</div>
+               <div class="control-info">
+                 <h5>Movement</h5>
+                 <p>Use WASD or arrow keys to navigate the floor.</p>
+               </div>
+             </div>
+             <div class="control-item">
+               <div class="key-cap">RMB</div>
+               <div class="control-info">
+                 <h5>Look Around</h5>
+                 <p>Hold Right Mouse Button and move mouse to rotate view.</p>
+               </div>
+             </div>
+             <div class="control-item">
+               <div class="key-cap">LMB</div>
+               <div class="control-info">
+                 <h5>Select</h5>
+                 <p>Left Click on machines to view real-time data and details.</p>
+               </div>
+             </div>
+             <div class="control-item">
+               <div class="key-cap">T</div>
+               <div class="control-info">
+                 <h5>Voice Chat</h5>
+                 <p>Hold T to speak with the Convai AI Assistant.</p>
+               </div>
+             </div>
+             <div class="control-item">
+               <div class="key-cap">↵</div>
+               <div class="control-info">
+                 <h5>Text Chat</h5>
+                 <p>Press Enter to type messages to the Convai AI.</p>
+               </div>
+             </div>
+           </div>
+         </div>
+
+         <div class="instruction-card">
+           <h4 style="margin-bottom: 12px; color: var(--accent);">Viewing Machine Data</h4>
+           <p style="font-size: 13px; color: var(--text);">To view the machine info dashboard, simply <strong>Left Click</strong> on any machine in the 3D view. This will instantly pull up the dashboard containing the live data stream for that specific unit.</p>
+           <div class="step-img">
+             <img src="/assets/gif1.gif" alt="Machine Info Demo" style="width: 100%; border-radius: 7px;" onerror="this.src='https://placehold.co/500x280/0d1420/F0B429?text=Machine+Info+GIF+Placeholder'">
+           </div>
+         </div>
+       </div>
+
+       <!-- Convai Content -->
+       <div id="convai-content" class="how-to-content">
+         <div class="instruction-card">
+           <h4 style="margin-bottom: 12px; color: var(--accent);">Using Convai AI</h4>
+           <p style="color: var(--muted); font-size: 13px;">Advanced AI interaction documentation coming soon...</p>
+         </div>
+       </div>
+
+       <!-- Human Tracking Content -->
+       <div id="human-tracking-docs-content" class="how-to-content">
+         <div class="instruction-card">
+           <h4 style="margin-bottom: 12px; color: var(--accent);">Using Human Tracking</h4>
+           <p style="color: var(--muted); font-size: 13px;">Safety monitoring and personnel tracking documentation coming soon...</p>
+         </div>
        </div>
     </div>
 
     <!-- Calculators Page -->
     <div id="calculators-page" class="page-section">
-       <div class="section-title">Calculators & Metrics</div>
+       <div class="section-title">Inventory Management</div>
        
        <div class="calc-container">
          <div class="calc-menu">
@@ -676,6 +772,30 @@
 
   // Initialize first calculator
   showCalc('eoq');
+
+  // --- How To Use Sub-navigation ---
+  function showHowTo(page) {
+    // Update sub-nav items
+    document.querySelectorAll('.sub-nav-item').forEach(item => {
+      item.classList.toggle('active', item.innerText.toLowerCase().includes(page.replace(/-/g, ' ')));
+    });
+
+    // Handle Human Tracking special case for matching
+    if (page === 'human-tracking-docs') {
+      document.querySelectorAll('.sub-nav-item').forEach(item => {
+        item.classList.toggle('active', item.innerText.toLowerCase() === 'human tracking');
+      });
+    }
+
+    // Update content visibility
+    document.querySelectorAll('.how-to-content').forEach(content => {
+      content.classList.remove('active');
+    });
+    const target = document.getElementById(`${page}-content`);
+    if (target) target.classList.add('active');
+  }
 </script>
 </body>
+</html>
+>
 </html>
