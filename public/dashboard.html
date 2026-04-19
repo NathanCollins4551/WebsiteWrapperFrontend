@@ -423,10 +423,47 @@
 
     <!-- Human Tracking Page -->
     <div id="human-tracking-page" class="page-section">
-       <div class="section-title">Human Tracking</div>
-       <p style="color: var(--muted);">Real-time personnel tracking and safety monitoring.</p>
-       <div style="flex: 1; border: 1px dashed var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--surface);">
-         <span style="color: var(--muted); font-size: 13px;">Human tracking data stream will appear here...</span>
+       <div class="section-title">
+         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; stroke: var(--accent);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+         Personnel Tracking & Zone Monitoring
+       </div>
+       
+       <div class="instruction-card" style="margin-bottom: 16px;">
+         <p style="color: var(--text); font-size: 13px; line-height: 1.6;">
+           Our advanced human tracking system utilizes overhead cameras paired with computer vision software to monitor personnel movement in real-time. The MakerSpace is divided into <strong>4 distinct zones</strong>.
+         </p>
+         <p style="color: var(--muted); font-size: 12px; margin-top: 8px;">
+           <span style="color: var(--danger); font-weight: 600;">● NOTE:</span> Zone 4 is a <strong>restricted area</strong>. Any unauthorized entry will trigger an immediate system alert.
+         </p>
+       </div>
+
+       <div style="flex: 1; display: flex; flex-direction: column; gap: 16px; min-height: 0;">
+         <!-- Map Container -->
+         <div id="tracking-map-container" style="position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+           <img src="/assets/makerspace_zones_with%20key.png" alt="MakerSpace Zones Map" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+           
+           <!-- Overlays will be injected here later -->
+         </div>
+
+         <!-- Status Summary (Placeholder for now) -->
+         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+           <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center;">
+             <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Zone 1</div>
+             <div style="font-size: 18px; font-weight: 700; color: var(--accent);">--</div>
+           </div>
+           <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center;">
+             <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Zone 2</div>
+             <div style="font-size: 18px; font-weight: 700; color: var(--accent);">--</div>
+           </div>
+           <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center;">
+             <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Zone 3</div>
+             <div style="font-size: 18px; font-weight: 700; color: var(--accent);">--</div>
+           </div>
+           <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center; border-color: rgba(248,113,113,0.2);">
+             <div style="font-size: 10px; color: var(--danger); text-transform: uppercase;">Zone 4 (R)</div>
+             <div style="font-size: 18px; font-weight: 700; color: var(--danger);">--</div>
+           </div>
+         </div>
        </div>
     </div>
 
