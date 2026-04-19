@@ -324,7 +324,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/>
         </svg>
-        Calculators
+        Inventory Management
       </a>
     </div>
 
@@ -437,32 +437,36 @@
          </p>
        </div>
 
-       <div style="flex: 1; display: flex; flex-direction: column; gap: 16px; min-height: 0;">
+       <div style="flex: 1; display: flex; flex-direction: row; gap: 16px; min-height: 0;">
+         <!-- Status Summary (Sidebar on the left) -->
+         <div style="display: flex; flex-direction: column; gap: 12px; width: 140px; flex-shrink: 0;">
+           <div class="instruction-card" style="padding: 16px 12px; margin-bottom: 0; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+             <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px;">Zone 1</div>
+             <div style="font-size: 24px; font-weight: 700; color: var(--accent);">--</div>
+             <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Personnel</div>
+           </div>
+           <div class="instruction-card" style="padding: 16px 12px; margin-bottom: 0; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+             <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px;">Zone 2</div>
+             <div style="font-size: 24px; font-weight: 700; color: var(--accent);">--</div>
+             <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Personnel</div>
+           </div>
+           <div class="instruction-card" style="padding: 16px 12px; margin-bottom: 0; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+             <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px;">Zone 3</div>
+             <div style="font-size: 24px; font-weight: 700; color: var(--accent);">--</div>
+             <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Personnel</div>
+           </div>
+           <div class="instruction-card" style="padding: 16px 12px; margin-bottom: 0; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; border-color: rgba(248,113,113,0.2);">
+             <div style="font-size: 11px; color: var(--danger); text-transform: uppercase; margin-bottom: 4px;">Zone 4 (R)</div>
+             <div style="font-size: 24px; font-weight: 700; color: var(--danger);">--</div>
+             <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Personnel</div>
+           </div>
+         </div>
+
          <!-- Map Container -->
-         <div id="tracking-map-container" style="position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+         <div id="tracking-map-container" style="flex: 1; position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
            <img src="/assets/makerspace_zones_with_key.png" alt="MakerSpace Zones Map" style="max-width: 100%; max-height: 100%; object-fit: contain;">
            
            <!-- Overlays will be injected here later -->
-         </div>
-
-         <!-- Status Summary (Placeholder for now) -->
-         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-           <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center;">
-             <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Zone 1</div>
-             <div style="font-size: 18px; font-weight: 700; color: var(--accent);">--</div>
-           </div>
-           <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center;">
-             <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Zone 2</div>
-             <div style="font-size: 18px; font-weight: 700; color: var(--accent);">--</div>
-           </div>
-           <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center;">
-             <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Zone 3</div>
-             <div style="font-size: 18px; font-weight: 700; color: var(--accent);">--</div>
-           </div>
-           <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center; border-color: rgba(248,113,113,0.2);">
-             <div style="font-size: 10px; color: var(--danger); text-transform: uppercase;">Zone 4 (R)</div>
-             <div style="font-size: 18px; font-weight: 700; color: var(--danger);">--</div>
-           </div>
          </div>
        </div>
     </div>
