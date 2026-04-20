@@ -15,7 +15,13 @@ class PersonnelVisualizer {
 
         this.debug = false; 
         this.entryExit = { x: 2098, y: 411 };
+        this.isFirstUpdate = true;
         
+        // Safety Waypoints for complex zones to avoid cutting corners
+        this.zoneWaypoints = {
+            2: { x: 1600, y: 450 } // Deep inside the upper body of Z2
+        };
+
         this.zones = {
             1: { poly: [{x:610,y:284}, {x:1305,y:278}, {x:1306,y:674}, {x:1152,y:675}, {x:1151,y:743}, {x:615,y:740}], restricted: false },
             2: { poly: [{x:1347,y:281}, {x:1844,y:284}, {x:1852,y:343}, {x:2133,y:350}, {x:2147,y:507}, {x:1816,y:508}, {x:1805,y:749}, {x:1479,y:750}, {x:1478,y:677}, {x:1353,y:677}], restricted: false },
@@ -86,8 +92,6 @@ class PersonnelVisualizer {
     }
 
     updateCounts(newCounts) {
-        // Simple logic: Balance counts by spawning or exiting people
-        // But use complex paths to ensure they follow gates
         const currentCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
         this.people.forEach(p => {
             if (!p.isExiting) currentCounts[p.zone]++;
@@ -96,12 +100,14 @@ class PersonnelVisualizer {
         for (let z = 1; z <= 4; z++) {
             let diff = (newCounts[`zone${z}`] || 0) - currentCounts[z];
             
-            if (diff > 0) { // Add people
+            if (diff > 0) {
                 while (diff > 0) {
-                    this.spawnPerson(z);
+                    // On first update, spawn people directly in the zone
+                    if (this.isFirstUpdate) this.spawnPerson(z, true);
+                    else this.spawnPerson(z, false);
                     diff--;
                 }
-            } else if (diff < 0) { // Remove people
+            } else if (diff < 0) {
                 while (diff < 0) {
                     const person = this.people.find(p => p.zone === z && !p.isExiting);
                     if (person) this.sendToExit(person);
@@ -109,6 +115,7 @@ class PersonnelVisualizer {
                 }
             }
         }
+        this.isFirstUpdate = false;
     }
 
     findShortestPath(from, to, avoidZone4 = true) {
@@ -126,7 +133,6 @@ class PersonnelVisualizer {
                 }
             }
         }
-        // If no path without zone 4, try again allowing it
         if (avoidZone4) return this.findShortestPath(from, to, false);
         return [from, to];
     }
@@ -139,9 +145,13 @@ class PersonnelVisualizer {
             const zCurrent = zoneSequence[i];
             const zNext = zoneSequence[i+1];
             
-            // Skip 0-2 gate as Entry is the gate
-            if (zCurrent === 0 && zNext === 2) continue;
+            // Special handling for Entry (0) to Zone 2
+            if (zCurrent === 0 && zNext === 2) {
+                fullPath.push(this.zoneWaypoints[2]); // Move to waypoint to ensure safe entry
+                continue;
+            }
             if (zCurrent === 2 && zNext === 0) {
+                fullPath.push(this.zoneWaypoints[2]);
                 fullPath.push(this.entryExit);
                 continue;
             }
@@ -149,6 +159,11 @@ class PersonnelVisualizer {
             const gateKey = zCurrent < zNext ? `${zCurrent}-${zNext}` : `${zNext}-${zCurrent}`;
             const gate = this.gates[gateKey];
             if (gate) {
+                // If leaving Z2, pass through waypoint first to clear the notch
+                if (zCurrent === 2 && !fullPath.includes(this.zoneWaypoints[2])) {
+                    fullPath.push(this.zoneWaypoints[2]);
+                }
+                
                 fullPath.push(gate[`z${zCurrent}`]);
                 fullPath.push(gate[`z${zNext}`]);
             }
@@ -157,15 +172,20 @@ class PersonnelVisualizer {
         return fullPath;
     }
 
-    spawnPerson(targetZone) {
+    spawnPerson(targetZone, instant = false) {
         const pt = this.getRandomPointInZone(targetZone);
         const person = {
             id: this.nextPersonId++,
-            x: this.entryExit.x, y: this.entryExit.y,
-            zone: targetZone, state: 'moving', isExiting: false,
-            path: this.getGatePath(0, targetZone, pt),
-            speed: 2.5 + Math.random() * 1.5, wanderSpeed: 0.2 + Math.random() * 0.3,
-            pulse: 0, pulseDir: 1
+            x: instant ? pt.x : this.entryExit.x, 
+            y: instant ? pt.y : this.entryExit.y,
+            zone: targetZone, 
+            state: instant ? 'idle' : 'moving', 
+            isExiting: false,
+            path: instant ? [] : this.getGatePath(0, targetZone, pt),
+            speed: 2.5 + Math.random() * 1.5, 
+            wanderSpeed: 0.2 + Math.random() * 0.3,
+            pulse: 0, 
+            pulseDir: 1
         };
         this.people.push(person);
     }
@@ -235,19 +255,16 @@ class PersonnelVisualizer {
         const s = this.scale, x = p.x * s, y = p.y * s, size = 18 * s;
         const isRestricted = this.zones[p.zone].restricted;
         
-        // Glow/Aura
         const color = isRestricted ? `rgba(248, 113, 113, ${0.4 + p.pulse * 0.4})` : 'rgba(240, 180, 41, 0.4)';
         const grad = this.ctx.createRadialGradient(x, y, 0, x, y, size * 1.5);
         grad.addColorStop(0, color); grad.addColorStop(1, 'rgba(0,0,0,0)');
         this.ctx.beginPath(); this.ctx.arc(x, y, size * 1.5, 0, Math.PI * 2);
         this.ctx.fillStyle = grad; this.ctx.fill();
         
-        // Body
         this.ctx.beginPath(); this.ctx.arc(x, y, size * 0.7, 0, Math.PI * 2);
         this.ctx.fillStyle = isRestricted ? '#f87171' : '#F0B429';
         this.ctx.fill();
         
-        // Head highlight
         this.ctx.beginPath(); this.ctx.arc(x, y - (size * 0.1), size * 0.3, 0, Math.PI * 2);
         this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
         this.ctx.fill();
