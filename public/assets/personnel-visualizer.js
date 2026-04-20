@@ -2,7 +2,6 @@
  * PersonnelVisualizer.js
  * COMPLETE REFACTOR: Travel Corridor Strategy.
  * Implements precise zone coordinates and strict corridor-based movement.
- * Build trigger: 2026-04-19
  */
 
 class PersonnelVisualizer {
@@ -26,6 +25,13 @@ class PersonnelVisualizer {
             41: { x: 1640, y: 1123, zone: 4 }
         };
 
+        this.hubs = {
+            1: { x: 950, y: 500 },
+            2: { x: 1700, y: 600 },
+            3: { x: 950, y: 1100 },
+            4: { x: 1600, y: 1100 }
+        };
+
         this.zones = {
             1: { poly: [{x:610,y:280}, {x:1301,y:280}, {x:1301,y:676}, {x:1154,y:676}, {x:1154,y:747}, {x:610,y:747}], restricted: false },
             2: { poly: [{x:1345,y:280}, {x:1854,y:280}, {x:1854,y:338}, {x:2143,y:338}, {x:2143,y:513}, {x:1812,y:513}, {x:1812,y:748}, {x:1477,y:748}, {x:1477,y:679}, {x:1348,y:679}], restricted: false },
@@ -33,7 +39,6 @@ class PersonnelVisualizer {
             4: { poly: [{x:1490,y:799}, {x:1810,y:799}, {x:1810,y:1144}, {x:2294,y:1144}, {x:2294,y:1355}, {x:2060,y:1359}, {x:2060,y:1276}, {x:1849,y:1279}, {x:1850,y:1363}, {x:1353,y:1371}, {x:1353,y:1030}, {x:1491,y:1030}], restricted: true }
         };
 
-        // Graph for corridor traversal
         this.adj = {
             2: [1, 4, 'outside'],
             1: [2, 3],
@@ -74,14 +79,20 @@ class PersonnelVisualizer {
 
     getRandomPointInZone(zoneId) {
         const zone = this.zones[zoneId];
+        const hub = this.hubs[zoneId];
         let pt, attempts = 0;
         let minX = Math.min(...zone.poly.map(p => p.x)), maxX = Math.max(...zone.poly.map(p => p.x));
         let minY = Math.min(...zone.poly.map(p => p.y)), maxY = Math.max(...zone.poly.map(p => p.y));
+
         do {
-            pt = { x: minX + Math.random() * (maxX - minX), y: minY + Math.random() * (maxY - minY) };
+            let rawX = minX + Math.random() * (maxX - minX);
+            let rawY = minY + Math.random() * (maxY - minY);
+            let dx = rawX - hub.x;
+            let dy = rawY - hub.y;
+            pt = { x: hub.x + dx * 0.8, y: hub.y + dy * 0.8 };
             attempts++;
         } while (!this.isPointInPoly(zone.poly, pt) && attempts < 100);
-        return attempts >= 100 ? { ...this.corridor[Object.keys(this.corridor).find(k => this.corridor[k].zone == zoneId)] } : pt;
+        return attempts >= 100 ? { ...hub } : pt;
     }
 
     updateCounts(newCounts) {
@@ -111,10 +122,7 @@ class PersonnelVisualizer {
             const node = path[path.length - 1];
             if (node == to) return path;
             for (const neighbor of this.adj[node]) {
-                if (!visited.has(neighbor)) {
-                    visited.add(neighbor);
-                    queue.push([...path, neighbor]);
-                }
+                if (!visited.has(neighbor)) { visited.add(neighbor); queue.push([...path, neighbor]); }
             }
         }
         return [from, to];
@@ -123,30 +131,23 @@ class PersonnelVisualizer {
     getComplexRoute(from, to, endPt) {
         const sequence = this.findShortestPath(from, to);
         const segments = [];
-
         for (let i = 0; i < sequence.length - 1; i++) {
             const curr = sequence[i];
             const next = sequence[i+1];
-
             if (curr === 'outside' && next === 2) {
                 segments.push({ x: this.spawnPoint.x, y: this.spawnPoint.y, type: 'transition' });
-                segments.push({ x: 1700, y: 418, type: 'transition' }); // Safe entry to corridor
+                segments.push({ x: 1700, y: 418, type: 'transition' });
             } else if (curr === 2 && next === 'outside') {
                 segments.push({ x: this.corridor[38].x, y: this.corridor[38].y, type: 'walk', zone: 2 });
                 segments.push({ x: this.spawnPoint.x, y: this.spawnPoint.y, type: 'transition' });
             } else {
-                // Determine Corridor Points
                 const pA = Object.values(this.corridor).find(p => p.zone == curr);
                 const pB = Object.values(this.corridor).find(p => p.zone == next);
-                
                 if (pA) segments.push({ x: pA.x, y: pA.y, type: 'walk', zone: curr });
                 if (pB) segments.push({ x: pB.x, y: pB.y, type: 'transition' });
             }
         }
-        
-        if (to !== 'outside') {
-            segments.push({ x: endPt.x, y: endPt.y, type: 'walk', zone: to });
-        }
+        if (to !== 'outside') segments.push({ x: endPt.x, y: endPt.y, type: 'walk', zone: to });
         return segments;
     }
 
@@ -206,20 +207,12 @@ class PersonnelVisualizer {
                 }
             }
 
-            // BOUNDARY ENFORCEMENT
             const nextX = p.x + dx, nextY = p.y + dy;
             if (seg && seg.type === 'walk') {
                 const poly = this.zones[seg.zone].poly;
-                if (this.isPointInPoly(poly, { x: nextX, y: nextY })) {
-                    p.x = nextX; p.y = nextY;
-                } else if (p.state === 'idle') {
-                    p.wanderTarget = null;
-                }
-                // If it's a walk but blocked, we don't move (avoids cutting)
-            } else {
-                // JUMPS or transitions ignore poly check
-                p.x = nextX; p.y = nextY;
-            }
+                if (this.isPointInPoly(poly, { x: nextX, y: nextY })) { p.x = nextX; p.y = nextY; }
+                else if (p.state === 'idle') { p.wanderTarget = null; }
+            } else { p.x = nextX; p.y = nextY; }
 
             this.drawPerson(p);
         }
@@ -240,17 +233,6 @@ class PersonnelVisualizer {
             this.ctx.fillStyle = z.restricted ? 'rgba(255,0,0,0.1)' : 'rgba(240,180,41,0.1)';
             this.ctx.fill();
         });
-        // Draw Corridor
-        this.ctx.beginPath();
-        this.ctx.moveTo(this.corridor[38].x * this.scale, this.corridor[38].y * this.scale);
-        this.ctx.lineTo(this.corridor[39].x * this.scale, this.corridor[39].y * this.scale);
-        this.ctx.lineTo(this.corridor[40].x * this.scale, this.corridor[40].y * this.scale);
-        this.ctx.lineTo(this.corridor[41].x * this.scale, this.corridor[41].y * this.scale);
-        this.ctx.lineTo(this.corridor[38].x * this.scale, this.corridor[38].y * this.scale);
-        this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        this.ctx.setLineDash([5, 5]);
-        this.ctx.stroke();
-        this.ctx.setLineDash([]);
     }
 
     drawPerson(p) {

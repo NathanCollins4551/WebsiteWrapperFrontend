@@ -1155,18 +1155,22 @@
     simInterval = setInterval(simulatePersonnelMovement, 5000);
   }
 
+  let lastZone4Entry = 0;
+  
   function simulatePersonnelMovement() {
     if (!visualizer || trackingMode !== 'sim') return;
 
-    // Realistic Incremental Logic:
-    // 1-2 shifts per refresh, occasionally 3, rarely 0.
+    const now = Date.now();
+    const canEnterZone4 = (now - lastZone4Entry) > 30000;
+    const mustEnterZone4 = (now - lastZone4Entry) > 45000;
+
+    // Realistic Incremental Logic
     const numShifts = Math.random() < 0.1 ? 0 : (Math.random() < 0.2 ? 3 : (Math.random() < 0.5 ? 1 : 2));
     
     for(let i=0; i<numShifts; i++) {
       const zones = ['zone1', 'zone2', 'zone3', 'zone4', 'outside'];
       const fromZone = zones[Math.floor(Math.random() * zones.length)];
       
-      // Determine valid targets (adjacent or enter/exit)
       let targets = [];
       if (fromZone === 'outside') targets = ['zone2'];
       if (fromZone === 'zone1') targets = ['zone2', 'zone3'];
@@ -1174,24 +1178,34 @@
       if (fromZone === 'zone3') targets = ['zone1', 'zone4'];
       if (fromZone === 'zone4') targets = ['zone2', 'zone3'];
 
-      const toZone = targets[Math.floor(Math.random() * targets.length)];
+      let toZone = targets[Math.floor(Math.random() * targets.length)];
 
-      // Apply the shift if possible
+      // ENFORCE RESTRICTIONS
+      if (toZone === 'zone4') {
+        if (!canEnterZone4 && !mustEnterZone4) {
+             // Redirect to another target if too early for Z4
+             toZone = targets.find(t => t !== 'zone4' && t !== fromZone) || fromZone;
+        } else {
+             lastZone4Entry = now;
+        }
+      }
+
+      // Apply the shift if possible + Cap at 4
       if (fromZone === 'outside') {
-        simCounts[toZone]++;
+        if (simCounts[toZone] < 4) simCounts[toZone]++;
       } else if (toZone === 'outside') {
         if (simCounts[fromZone] > 0) simCounts[fromZone]--;
       } else {
-        if (simCounts[fromZone] > 0) {
+        if (simCounts[fromZone] > 0 && simCounts[toZone] < 4) {
           simCounts[fromZone]--;
           simCounts[toZone]++;
         }
       }
     }
 
-    // Cap counts for visual clarity
+    // Double check caps
     Object.keys(simCounts).forEach(z => {
-      if (simCounts[z] > 5) simCounts[z] = 5;
+      if (simCounts[z] > 4) simCounts[z] = 4;
     });
     
     visualizer.updateCounts(simCounts);
