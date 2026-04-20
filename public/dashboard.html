@@ -283,11 +283,34 @@
       --border: rgba(0,0,0,0.08); --text: #1e293b; --muted: #64748b;
     }
     body.light-mode .instruction-card, body.light-mode .calc-window { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+
+    /* Notifications */
+    .notification {
+      width: 320px; background: var(--surface); border: 1px solid var(--border);
+      border-left: 4px solid var(--accent); border-radius: 8px; padding: 16px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); pointer-events: auto;
+      display: flex; gap: 12px; animation: slideIn 0.3s ease-out;
+      position: relative; overflow: hidden;
+    }
+    .notification.critical { border-left-color: #ef4444; }
+    .notification-content h6 { margin: 0 0 4px 0; font-size: 13px; color: var(--text); }
+    .notification-content p { margin: 0; font-size: 11px; color: var(--muted); line-height: 1.4; }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; transform: scale(1); }
+      to { opacity: 0; transform: scale(0.95); }
+    }
   </style>
 </head>
 <body>
 
 <div class="layout">
+  <div id="notification-container" style="position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; pointer-events: none;"></div>
+
   <!-- Top nav -->
   <nav class="topnav">
     <div class="logo">
@@ -1138,13 +1161,13 @@
   // --- Audio Synthesis for Tones ---
   let audioCtx = null;
 
-  function testTone() {
+  function playAlertSound() {
+    const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+    const tone = prefs.notifTone || 'subtle';
+    const volume = (prefs.notifVolume || 70) / 100;
+    
+    if (tone === 'mute' || volume <= 0) return;
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    const tone = document.getElementById('pref-tone').value;
-    const volume = document.getElementById('pref-volume').value / 100;
-    
-    if (tone === 'mute') return;
 
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -1158,11 +1181,11 @@
 
     if (tone === 'subtle') {
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // High A
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
     } 
     else if (tone === 'industrial') {
       osc.type = 'square';
-      osc.frequency.setValueAtTime(220, audioCtx.currentTime); // Low A
+      osc.frequency.setValueAtTime(220, audioCtx.currentTime);
     } 
     else if (tone === 'pulse') {
       osc.type = 'triangle';
@@ -1172,6 +1195,71 @@
 
     osc.start();
     osc.stop(audioCtx.currentTime + 0.6);
+  }
+
+  function testTone() {
+    // This UI helper temporarily overrides prefs to test current selection
+    const tone = document.getElementById('pref-tone').value;
+    const volume = document.getElementById('pref-volume').value / 100;
+    
+    if (tone === 'mute') return;
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (tone === 'subtle') osc.type = 'sine';
+    else if (tone === 'industrial') osc.type = 'square';
+    else if (tone === 'pulse') osc.type = 'triangle';
+    
+    osc.frequency.setValueAtTime(tone==='industrial'?220:440, audioCtx.currentTime);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.6);
+  }
+
+  // --- Notification System ---
+  function notify(title, message, isCritical = false) {
+    const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+    const container = document.getElementById('notification-container');
+    
+    if (prefs.criticalOnly && !isCritical) return;
+
+    playAlertSound();
+
+    const div = document.createElement('div');
+    div.className = `notification ${isCritical ? 'critical' : ''}`;
+    div.innerHTML = `
+      <div class="notification-icon" style="margin-top: 2px;">
+        ${isCritical ? 
+          '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" style="width:18px;height:18px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' :
+          '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="width:18px;height:18px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'
+        }
+      </div>
+      <div class="notification-content">
+        <h6>${title}</h6>
+        <p>${message}</p>
+      </div>
+    `;
+
+    container.appendChild(div);
+
+    const dismiss = prefs.autoDismiss || '5';
+    if (dismiss !== 'manual') {
+      setTimeout(() => {
+        div.style.animation = 'fadeOut 0.3s forwards';
+        setTimeout(() => div.remove(), 300);
+      }, parseInt(dismiss) * 1000);
+    }
+    
+    div.onclick = () => {
+      div.style.animation = 'fadeOut 0.3s forwards';
+      setTimeout(() => div.remove(), 300);
+    };
   }
 
   // Initial load
@@ -1215,6 +1303,13 @@
     visualizer = new PersonnelVisualizer('personnelCanvas', 'tracking-map-container');
     visualizer.debug = true; // Safe zones always visible as requested
     
+    // Security Alert: Hook notification to real-time zone entry
+    visualizer.onZoneEntry = (zoneId, personId) => {
+      if (zoneId === 4) {
+        notify("Security Alert", `Unauthorized entry detected in Restricted Zone 4 (Subject ID: ${personId})`, true);
+      }
+    };
+
     // Initial data load
     visualizer.updateCounts(simCounts);
     updateZoneUI(simCounts);

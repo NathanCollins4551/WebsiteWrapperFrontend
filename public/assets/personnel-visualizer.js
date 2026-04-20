@@ -16,6 +16,8 @@ class PersonnelVisualizer {
         this.debug = false; 
         this.spawnPoint = { x: 2046, y: 419 };
         this.isFirstUpdate = true;
+        
+        this.onZoneEntry = null;
 
         // Travel Corridor Points
         this.corridor = {
@@ -33,7 +35,7 @@ class PersonnelVisualizer {
         };
 
         this.zones = {
-            1: { poly: [{x:610,y:280}, {x:1301,y:280}, {x:1301,y:676}, {x:1154,y:676}, {x:1154,y:747}, {x:610,y:747}], restricted: false },
+            1: { poly: [{x:610,y:280}, {x:1301,y:280}, {x:1301,y:676}, {x:1152,y:676}, {x:1154,y:747}, {x:610,y:747}], restricted: false },
             2: { poly: [{x:1345,y:280}, {x:1854,y:280}, {x:1854,y:338}, {x:2143,y:338}, {x:2143,y:513}, {x:1812,y:513}, {x:1812,y:748}, {x:1477,y:748}, {x:1477,y:679}, {x:1348,y:679}], restricted: false },
             3: { poly: [{x:610,y:788}, {x:610,y:1080}, {x:696,y:1080}, {x:696,y:1249}, {x:1085,y:1249}, {x:1085,y:1372}, {x:1296,y:1372}, {x:1296,y:1014}, {x:1154,y:1014}, {x:1154,y:788}], restricted: false },
             4: { poly: [{x:1490,y:799}, {x:1810,y:799}, {x:1810,y:1144}, {x:2294,y:1144}, {x:2294,y:1355}, {x:2060,y:1359}, {x:2060,y:1276}, {x:1849,y:1279}, {x:1850,y:1363}, {x:1353,y:1371}, {x:1353,y:1030}, {x:1491,y:1030}], restricted: true }
@@ -159,7 +161,7 @@ class PersonnelVisualizer {
             zone: targetZone, state: instant ? 'idle' : 'moving', isExiting: false,
             path: instant ? [] : this.getComplexRoute('outside', targetZone, pt),
             speed: 7 + Math.random() * 2, wanderSpeed: 0.15 + Math.random() * 0.15,
-            pulse: 0, pulseDir: 1
+            pulse: 0, pulseDir: 1, inRestricted: false
         };
         this.people.push(person);
     }
@@ -177,7 +179,15 @@ class PersonnelVisualizer {
 
         for (let i = this.people.length - 1; i >= 0; i--) {
             const p = this.people[i];
+            
+            // TRACK ZONE 4 ENTRY
+            const wasInRestricted = p.inRestricted;
             p.inRestricted = this.isPointInPoly(this.zones[4].poly, { x: p.x, y: p.y });
+            
+            if (p.inRestricted && !wasInRestricted) {
+                if (this.onZoneEntry) this.onZoneEntry(4, p.id);
+            }
+
             p.pulse += 0.05 * p.pulseDir;
             if (p.pulse > 1 || p.pulse < 0) p.pulseDir *= -1;
 
