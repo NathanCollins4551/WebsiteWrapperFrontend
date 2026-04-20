@@ -1,7 +1,7 @@
 /**
  * PersonnelVisualizer.js
  * High-performance Canvas Personnel Visualizer for MakerSpace Digital Twin.
- * Handles strict pathfinding through gates and direct multi-zone movement.
+ * Handles strict pathfinding through hubs and gates to ensure safe movement.
  */
 
 class PersonnelVisualizer {
@@ -17,8 +17,13 @@ class PersonnelVisualizer {
         this.entryExit = { x: 2098, y: 411 };
         this.isFirstUpdate = true;
         
-        // Safety Corner for Zone 2: Ensures people walk around the notch of Z4
-        this.z2SafetyCorner = { x: 1950, y: 723 };
+        // Zone Hubs: Guaranteed safe points in the middle of each zone's walkable area
+        this.hubs = {
+            1: { x: 950, y: 500 },
+            2: { x: 1700, y: 600 },
+            3: { x: 950, y: 1100 },
+            4: { x: 1600, y: 1100 }
+        };
 
         this.zones = {
             1: { poly: [{x:610,y:284}, {x:1305,y:278}, {x:1306,y:674}, {x:1152,y:675}, {x:1151,y:743}, {x:615,y:740}], restricted: false },
@@ -77,6 +82,7 @@ class PersonnelVisualizer {
 
     getRandomPointInZone(zoneId) {
         const zone = this.zones[zoneId];
+        const hub = this.hubs[zoneId];
         let minX = Math.min(...zone.poly.map(p => p.x));
         let maxX = Math.max(...zone.poly.map(p => p.x));
         let minY = Math.min(...zone.poly.map(p => p.y));
@@ -86,7 +92,7 @@ class PersonnelVisualizer {
             pt = { x: minX + Math.random() * (maxX - minX), y: minY + Math.random() * (maxY - minY) };
             attempts++;
         } while (!this.isPointInPoly(zone.poly, pt) && attempts < 100);
-        return pt;
+        return attempts >= 100 ? { ...hub } : pt;
     }
 
     updateCounts(newCounts) {
@@ -140,26 +146,25 @@ class PersonnelVisualizer {
             const zCurrent = zoneSequence[i];
             const zNext = zoneSequence[i+1];
             
-            // Special Waypoint logic for Zone 2 traversal
-            if (zCurrent === 2 || zNext === 2) {
-                const alreadyHasCorner = fullPath.some(p => p.x === this.z2SafetyCorner.x && p.y === this.z2SafetyCorner.y);
-                if (!alreadyHasCorner) fullPath.push(this.z2SafetyCorner);
+            // 1. Move to current zone's hub first (unless spawning at door)
+            if (zCurrent !== 0) fullPath.push(this.hubs[zCurrent]);
+
+            // 2. Add Gate
+            if (zCurrent === 0 && zNext === 2) {
+                // Entry to Z2 skip hub if just spawning? No, go to hub2.
+            } else {
+                const gateKey = zCurrent < zNext ? `${zCurrent}-${zNext}` : `${zNext}-${zCurrent}`;
+                const gate = this.gates[gateKey];
+                if (gate) {
+                    fullPath.push(gate[`z${zCurrent}`]);
+                    fullPath.push(gate[`z${zNext}`]);
+                }
             }
 
-            // Entry/Exit Logic
-            if (zCurrent === 0 && zNext === 2) continue;
-            if (zCurrent === 2 && zNext === 0) {
-                fullPath.push(this.entryExit);
-                continue;
-            }
-
-            const gateKey = zCurrent < zNext ? `${zCurrent}-${zNext}` : `${zNext}-${zCurrent}`;
-            const gate = this.gates[gateKey];
-            if (gate) {
-                fullPath.push(gate[`z${zCurrent}`]);
-                fullPath.push(gate[`z${zNext}`]);
-            }
+            // 3. Move to next zone's hub
+            if (zNext !== 0) fullPath.push(this.hubs[zNext]);
         }
+        
         fullPath.push(endPt);
         return fullPath;
     }
@@ -195,7 +200,7 @@ class PersonnelVisualizer {
         for (let i = this.people.length - 1; i >= 0; i--) {
             const p = this.people[i];
             
-            // Update Restricted state based on current location
+            // DYNAMIC COLOR CHECK: Update state based on CURRENT coordinate
             p.inRestricted = this.isPointInPoly(this.zones[4].poly, { x: p.x, y: p.y });
 
             p.pulse += 0.05 * p.pulseDir;
@@ -249,20 +254,21 @@ class PersonnelVisualizer {
 
     drawPerson(p) {
         const s = this.scale, x = p.x * s, y = p.y * s, size = 18 * s;
-        
-        // Use the current restricted state
         const isRestricted = p.inRestricted;
         
+        // Glow/Aura
         const color = isRestricted ? `rgba(248, 113, 113, ${0.4 + p.pulse * 0.4})` : 'rgba(240, 180, 41, 0.4)';
         const grad = this.ctx.createRadialGradient(x, y, 0, x, y, size * 1.5);
         grad.addColorStop(0, color); grad.addColorStop(1, 'rgba(0,0,0,0)');
         this.ctx.beginPath(); this.ctx.arc(x, y, size * 1.5, 0, Math.PI * 2);
         this.ctx.fillStyle = grad; this.ctx.fill();
         
+        // Body
         this.ctx.beginPath(); this.ctx.arc(x, y, size * 0.7, 0, Math.PI * 2);
         this.ctx.fillStyle = isRestricted ? '#f87171' : '#F0B429';
         this.ctx.fill();
         
+        // Head highlight
         this.ctx.beginPath(); this.ctx.arc(x, y - (size * 0.1), size * 0.3, 0, Math.PI * 2);
         this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
         this.ctx.fill();
