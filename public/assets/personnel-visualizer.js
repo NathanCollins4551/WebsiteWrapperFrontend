@@ -17,10 +17,6 @@ class PersonnelVisualizer {
         this.entryExit = { x: 2098, y: 411 };
         this.isFirstUpdate = true;
         
-        // Safety Waypoint for the Door: Aligned horizontally with the entryExit point
-        // This ensures dots move straight down/up before turning into the zone.
-        this.z2DoorWaypoint = { x: 2098, y: 450 };
-
         // Zone Hubs: Guaranteed safe points in the middle of each zone's walkable area
         this.hubs = {
             1: { x: 950, y: 500 },
@@ -28,6 +24,10 @@ class PersonnelVisualizer {
             3: { x: 950, y: 1100 },
             4: { x: 1600, y: 1100 }
         };
+
+        // Safety Waypoint: Aligned horizontally with the door (Y=411) and vertically with the Hub (X=1700)
+        // This forces an L-shaped path that stays perfectly inside the safe corridor.
+        this.z2DoorWaypoint = { x: 1700, y: 411 };
 
         this.zones = {
             1: { poly: [{x:610,y:284}, {x:1305,y:278}, {x:1306,y:674}, {x:1152,y:675}, {x:1151,y:743}, {x:615,y:740}], restricted: false },
@@ -150,15 +150,13 @@ class PersonnelVisualizer {
             const zCurrent = zoneSequence[i];
             const zNext = zoneSequence[i+1];
             
-            // 1. Move to current zone's hub first (unless spawning at door)
+            // Current Hub
             if (zCurrent !== 0) fullPath.push(this.hubs[zCurrent]);
 
-            // 2. Door/Gate Handling
+            // Gate/Waypoint Logic
             if (zCurrent === 0 && zNext === 2) {
-                // Spawning: Entry Point -> Door Waypoint (Vertical move) -> Hub 2
                 fullPath.push(this.z2DoorWaypoint);
             } else if (zCurrent === 2 && zNext === 0) {
-                // Exiting: Hub 2 -> Door Waypoint (Horizontal move) -> Exit Point (Vertical move)
                 fullPath.push(this.z2DoorWaypoint);
                 fullPath.push(this.entryExit);
                 continue; 
@@ -171,7 +169,7 @@ class PersonnelVisualizer {
                 }
             }
 
-            // 3. Move to next zone's hub
+            // Next Hub
             if (zNext !== 0) fullPath.push(this.hubs[zNext]);
         }
         
@@ -210,7 +208,7 @@ class PersonnelVisualizer {
         for (let i = this.people.length - 1; i >= 0; i--) {
             const p = this.people[i];
             
-            // DYNAMIC COLOR CHECK: Update state based on CURRENT coordinate
+            // DYNAMIC COLOR CHECK
             p.inRestricted = this.isPointInPoly(this.zones[4].poly, { x: p.x, y: p.y });
 
             p.pulse += 0.05 * p.pulseDir;
@@ -265,20 +263,14 @@ class PersonnelVisualizer {
     drawPerson(p) {
         const s = this.scale, x = p.x * s, y = p.y * s, size = 18 * s;
         const isRestricted = p.inRestricted;
-        
-        // Glow/Aura
         const color = isRestricted ? `rgba(248, 113, 113, ${0.4 + p.pulse * 0.4})` : 'rgba(240, 180, 41, 0.4)';
         const grad = this.ctx.createRadialGradient(x, y, 0, x, y, size * 1.5);
         grad.addColorStop(0, color); grad.addColorStop(1, 'rgba(0,0,0,0)');
         this.ctx.beginPath(); this.ctx.arc(x, y, size * 1.5, 0, Math.PI * 2);
         this.ctx.fillStyle = grad; this.ctx.fill();
-        
-        // Body
         this.ctx.beginPath(); this.ctx.arc(x, y, size * 0.7, 0, Math.PI * 2);
         this.ctx.fillStyle = isRestricted ? '#f87171' : '#F0B429';
         this.ctx.fill();
-        
-        // Head highlight
         this.ctx.beginPath(); this.ctx.arc(x, y - (size * 0.1), size * 0.3, 0, Math.PI * 2);
         this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
         this.ctx.fill();
