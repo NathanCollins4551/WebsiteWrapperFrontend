@@ -17,6 +17,10 @@ class PersonnelVisualizer {
         this.entryExit = { x: 2098, y: 411 };
         this.isFirstUpdate = true;
         
+        // Safety Waypoint for the Door: Aligned horizontally with the entryExit point
+        // This ensures dots move straight down/up before turning into the zone.
+        this.z2DoorWaypoint = { x: 2098, y: 450 };
+
         // Zone Hubs: Guaranteed safe points in the middle of each zone's walkable area
         this.hubs = {
             1: { x: 950, y: 500 },
@@ -149,9 +153,15 @@ class PersonnelVisualizer {
             // 1. Move to current zone's hub first (unless spawning at door)
             if (zCurrent !== 0) fullPath.push(this.hubs[zCurrent]);
 
-            // 2. Add Gate
+            // 2. Door/Gate Handling
             if (zCurrent === 0 && zNext === 2) {
-                // Entry to Z2 skip hub if just spawning? No, go to hub2.
+                // Spawning: Entry Point -> Door Waypoint (Vertical move) -> Hub 2
+                fullPath.push(this.z2DoorWaypoint);
+            } else if (zCurrent === 2 && zNext === 0) {
+                // Exiting: Hub 2 -> Door Waypoint (Horizontal move) -> Exit Point (Vertical move)
+                fullPath.push(this.z2DoorWaypoint);
+                fullPath.push(this.entryExit);
+                continue; 
             } else {
                 const gateKey = zCurrent < zNext ? `${zCurrent}-${zNext}` : `${zNext}-${zCurrent}`;
                 const gate = this.gates[gateKey];
