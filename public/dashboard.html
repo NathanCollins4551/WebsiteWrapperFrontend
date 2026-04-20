@@ -246,6 +246,25 @@
     }
     .pref-select:focus { border-color: var(--accent); }
 
+    .pref-range {
+      -webkit-appearance: none;
+      width: 100px;
+      height: 4px;
+      background: var(--surface3);
+      border-radius: 2px;
+      outline: none;
+    }
+    .pref-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .pref-range::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
     /* Theme Overrides */
     body.theme-blue { --accent: #3b82f6; --accent2: #2563eb; --accent-g: linear-gradient(135deg, #3b82f6, #06b6d4); }
     body.theme-green { --accent: #10b981; --accent2: #059669; --accent-g: linear-gradient(135deg, #10b981, #34d399); }
@@ -759,12 +778,26 @@
                  <div style="font-weight: 500; font-size: 13px;">Notification Tone</div>
                  <div style="font-size: 11px; color: var(--muted);">Sound played for new alerts</div>
                </div>
-               <select class="pref-select" id="pref-tone" onchange="savePrefs()">
-                 <option value="subtle">Subtle Chime</option>
-                 <option value="industrial">Industrial Beep</option>
-                 <option value="pulse">Tech Pulse</option>
-                 <option value="mute">Mute</option>
-               </select>
+               <div style="display: flex; gap: 8px; align-items: center;">
+                 <select class="pref-select" id="pref-tone" onchange="savePrefs()">
+                   <option value="subtle">Subtle Chime</option>
+                   <option value="industrial">Industrial Beep</option>
+                   <option value="pulse">Tech Pulse</option>
+                   <option value="mute">Mute</option>
+                 </select>
+                 <button class="btn-sm ghost" style="padding: 4px 8px; font-size: 10px;" onclick="testTone()">TEST</button>
+               </div>
+             </div>
+
+             <div style="display: flex; align-items: center; justify-content: space-between;">
+               <div>
+                 <div style="font-weight: 500; font-size: 13px;">Notification Volume</div>
+                 <div style="font-size: 11px; color: var(--muted);">Adjust the alert loudness</div>
+               </div>
+               <div style="display: flex; gap: 12px; align-items: center;">
+                 <input type="range" id="pref-volume" min="0" max="100" value="70" class="pref-range" onchange="savePrefs()">
+                 <button class="btn-sm ghost" style="padding: 4px 8px; font-size: 10px;" onclick="testTone()">TEST</button>
+               </div>
              </div>
 
              <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -1052,6 +1085,7 @@
     uiDensity: 'comfortable',
     glowEffects: true,
     notifTone: 'subtle',
+    notifVolume: 70,
     autoDismiss: '5',
     criticalOnly: false
   };
@@ -1063,6 +1097,7 @@
       uiDensity: document.getElementById('pref-ui-density').value,
       glowEffects: document.getElementById('pref-glow').checked,
       notifTone: document.getElementById('pref-tone').value,
+      notifVolume: parseInt(document.getElementById('pref-volume').value),
       autoDismiss: document.getElementById('pref-dismiss').value,
       criticalOnly: document.getElementById('pref-critical-only').checked
     };
@@ -1080,6 +1115,7 @@
     document.getElementById('pref-ui-density').value = prefs.uiDensity;
     document.getElementById('pref-glow').checked = prefs.glowEffects;
     document.getElementById('pref-tone').value = prefs.notifTone;
+    document.getElementById('pref-volume').value = prefs.notifVolume;
     document.getElementById('pref-dismiss').value = prefs.autoDismiss;
     document.getElementById('pref-critical-only').checked = prefs.criticalOnly;
 
@@ -1097,9 +1133,45 @@
     
     b.classList.toggle('density-compact', prefs.uiDensity === 'compact');
     b.classList.toggle('no-glow', !prefs.glowEffects);
+  }
 
-    // Note: Notification preferences (tone, dismiss, filtering) are handled 
-    // by the notification system when triggering alerts.
+  // --- Audio Synthesis for Tones ---
+  let audioCtx = null;
+
+  function testTone() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    const tone = document.getElementById('pref-tone').value;
+    const volume = document.getElementById('pref-volume').value / 100;
+    
+    if (tone === 'mute') return;
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (tone === 'subtle') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // High A
+    } 
+    else if (tone === 'industrial') {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(220, audioCtx.currentTime); // Low A
+    } 
+    else if (tone === 'pulse') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.2);
+    }
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.6);
   }
 
   // Initial load
