@@ -2,6 +2,7 @@
  * PersonnelVisualizer.js
  * COMPLETE REFACTOR: Travel Corridor Strategy.
  * Implements precise zone coordinates and strict corridor-based movement.
+ * Build trigger: 2026-04-19
  */
 
 class PersonnelVisualizer {
