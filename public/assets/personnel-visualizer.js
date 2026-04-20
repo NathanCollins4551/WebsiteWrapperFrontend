@@ -271,9 +271,29 @@ class PersonnelVisualizer {
             const nextX = p.x + dx, nextY = p.y + dy;
             if (seg && seg.type === 'walk') {
                 const poly = this.zones[seg.zone].poly;
-                if (this.isPointInPoly(poly, { x: nextX, y: nextY })) { p.x = nextX; p.y = nextY; }
-                else if (p.state === 'idle') { p.wanderTarget = null; }
-            } else { p.x = nextX; p.y = nextY; }
+                // STUCK PREVENTION: Allow movement if in 'moving' state (following a path) 
+                // or if the next step is inside the polygon (wandering)
+                if (p.state === 'moving' || this.isPointInPoly(poly, { x: nextX, y: nextY })) { 
+                    p.x = nextX; p.y = nextY; 
+                }
+                else if (p.state === 'idle') { 
+                    p.wanderTarget = null; 
+                }
+                
+                // Backup recovery: If they are moving but haven't changed position in a long time, force next segment
+                if (p.state === 'moving') {
+                    p.stuckFrames = (p.stuckFrames || 0) + 1;
+                    if (p.stuckFrames > 100) {
+                        p.x = seg.x; p.y = seg.y; // Teleport to target
+                        p.stuckFrames = 0;
+                    }
+                } else {
+                    p.stuckFrames = 0;
+                }
+            } else { 
+                p.x = nextX; p.y = nextY; 
+                p.stuckFrames = 0;
+            }
 
             this.drawPerson(p);
         }
