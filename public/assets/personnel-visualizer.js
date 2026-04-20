@@ -39,7 +39,7 @@ class PersonnelVisualizer {
             "1-2": { z1: {x:1264,y:476}, z2: {x:1375,y:476} },
             "1-3": { z1: {x:875,y:723}, z3: {x:875,y:829} },
             "3-4": { z3: {x:1276,y:1135}, z4: {x:1395,y:1135} },
-            "4-2": { z4: {x:1671,y:820}, z2: {x:1671,y:723} }
+            "2-4": { z2: {x:1671,y:723}, z4: {x:1671,y:820} }
         };
 
         this.adj = { 0: [2], 1: [2, 3], 2: [0, 1, 4], 3: [1, 4], 4: [2, 3] };
@@ -128,35 +128,36 @@ class PersonnelVisualizer {
             const zCurr = zoneSequence[i];
             const zNext = zoneSequence[i+1];
             
-            // 1. SAFE WALK to Gate A
+            // Current Hub (stay inside)
+            if (zCurr !== 0) segments.push({ x: this.hubs[zCurr].x, y: this.hubs[zCurr].y, type: 'walk', zone: zCurr });
+
+            // Transition Logic
             if (zCurr === 0 && zNext === 2) {
                 segments.push({ x: this.entryExit.x, y: this.entryExit.y, type: 'jump' });
                 segments.push({ x: this.z2DoorWaypoint.x, y: this.z2DoorWaypoint.y, type: 'walk', zone: 2 });
             } else if (zCurr === 2 && zNext === 0) {
-                segments.push({ x: this.hubs[2].x, y: this.hubs[2].y, type: 'walk', zone: 2 });
                 segments.push({ x: this.z2DoorWaypoint.x, y: this.z2DoorWaypoint.y, type: 'walk', zone: 2 });
                 segments.push({ x: this.entryExit.x, y: this.entryExit.y, type: 'walk', zone: 2 });
+                segments.push({ x: this.entryExit.x, y: this.entryExit.y, type: 'jump' });
             } else {
                 const gateKey = zCurr < zNext ? `${zCurr}-${zNext}` : `${zNext}-${zCurr}`;
                 const gate = this.gates[gateKey];
-                const ptA = gate[`z${zCurr}`];
-                const ptB = gate[`z${zNext}`];
                 
-                // WALK through hub to Gate A
-                segments.push({ x: this.hubs[zCurr].x, y: this.hubs[zCurr].y, type: 'walk', zone: zCurr });
-                segments.push({ x: ptA.x, y: ptA.y, type: 'walk', zone: zCurr });
-                
-                // JUMP to Gate B
-                segments.push({ x: ptB.x, y: ptB.y, type: 'jump' });
+                if (gate) {
+                    const ptA = gate[`z${zCurr}`];
+                    const ptB = gate[`z${zNext}`];
+                    segments.push({ x: ptA.x, y: ptA.y, type: 'walk', zone: zCurr });
+                    segments.push({ x: ptB.x, y: ptB.y, type: 'jump' });
+                }
             }
+            
+            // Next Hub (stay inside)
+            if (zNext !== 0) segments.push({ x: this.hubs[zNext].x, y: this.hubs[zNext].y, type: 'walk', zone: zNext });
         }
         
-        // Final WALK to destination
+        // Final walk to random destination
         if (to !== 0) {
-            segments.push({ x: this.hubs[to].x, y: this.hubs[to].y, type: 'walk', zone: to });
             segments.push({ x: endPt.x, y: endPt.y, type: 'walk', zone: to });
-        } else {
-            segments.push({ x: this.entryExit.x, y: this.entryExit.y, type: 'jump' });
         }
         
         return segments;
@@ -213,24 +214,23 @@ class PersonnelVisualizer {
                 if (dist > 2) {
                     dx = (wdx / dist) * p.wanderSpeed;
                     dy = (wdy / dist) * p.wanderSpeed;
-                    seg = { type: 'walk', zone: p.zone }; // Idle wander is always a WALK
+                    seg = { type: 'walk', zone: p.zone };
                 }
             }
 
-            // BOUNDARY ENFORCEMENT
             if (seg && seg.type === 'walk') {
                 const poly = this.zones[seg.zone].poly;
                 if (this.isPointInPoly(poly, { x: p.x + dx, y: p.y + dy })) {
                     p.x += dx; p.y += dy;
                 } else if (this.isPointInPoly(poly, { x: p.x + dx, y: p.y })) {
-                    p.x += dx; // Slide X
+                    p.x += dx;
                 } else if (this.isPointInPoly(poly, { x: p.x, y: p.y + dy })) {
-                    p.y += dy; // Slide Y
+                    p.y += dy;
                 } else if (p.state === 'idle') {
                     p.wanderTarget = null;
                 }
             } else {
-                p.x += dx; p.y += dy; // JUMP
+                p.x += dx; p.y += dy;
             }
 
             this.drawPerson(p);
