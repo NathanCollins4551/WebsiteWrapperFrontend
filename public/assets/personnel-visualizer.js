@@ -186,11 +186,24 @@ class PersonnelVisualizer {
 
     spawnPerson(targetZone, instant = false) {
         const pt = this.getRandomPointInZone(targetZone);
+        
+        // DIFFERENTIATION: Live mode uses simple direct paths, Sim mode uses complex travel corridors
+        let path = [];
+        if (!instant) {
+            if (this.mode === 'live') {
+                // Direct "long" move allowed in live mode
+                path = [{ x: pt.x, y: pt.y, type: 'walk', zone: targetZone }];
+            } else {
+                // Standard corridor routing for simulation
+                path = this.getComplexRoute('outside', targetZone, pt);
+            }
+        }
+
         const person = {
             id: this.nextPersonId++,
             x: instant ? pt.x : this.spawnPoint.x, y: instant ? pt.y : this.spawnPoint.y,
             zone: targetZone, state: instant ? 'idle' : 'moving', isExiting: false,
-            path: instant ? [] : this.getComplexRoute('outside', targetZone, pt),
+            path: path,
             speed: 7 + Math.random() * 2, wanderSpeed: 0.15 + Math.random() * 0.15,
             pulse: 0, pulseDir: 1, inRestricted: false
         };
@@ -198,7 +211,12 @@ class PersonnelVisualizer {
     }
 
     sendToExit(person) {
-        person.path = this.getComplexRoute(person.zone, 'outside', this.spawnPoint);
+        // DIFFERENTIATION: Live mode uses direct path to exit
+        if (this.mode === 'live') {
+            person.path = [{ x: this.spawnPoint.x, y: this.spawnPoint.y, type: 'walk', zone: person.zone }];
+        } else {
+            person.path = this.getComplexRoute(person.zone, 'outside', this.spawnPoint);
+        }
         person.isExiting = true;
         person.state = 'moving';
         person.speed = 8;
