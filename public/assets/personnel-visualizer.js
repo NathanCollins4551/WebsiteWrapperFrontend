@@ -53,7 +53,20 @@ class PersonnelVisualizer {
         this.nextPersonId = 1;
         
         window.addEventListener('resize', () => this.resize());
+        
+        // Ensure visibility: Opening console or changing tabs often fixes rendering issues.
+        // We force multiple resizes and use IntersectionObserver to detect when the tab is shown.
         this.resize();
+        setTimeout(() => this.resize(), 100);
+        setTimeout(() => this.resize(), 1000);
+
+        if (window.IntersectionObserver) {
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) this.resize();
+            });
+            observer.observe(this.canvas);
+        }
+
         this.animate();
     }
 
