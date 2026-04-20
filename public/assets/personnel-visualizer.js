@@ -17,10 +17,8 @@ class PersonnelVisualizer {
         this.entryExit = { x: 2098, y: 411 };
         this.isFirstUpdate = true;
         
-        // Safety Waypoints for complex zones to avoid cutting corners
-        this.zoneWaypoints = {
-            2: { x: 1600, y: 450 } // Deep inside the upper body of Z2
-        };
+        // Safety Corner for Zone 2: Ensures people walk around the notch of Z4
+        this.z2SafetyCorner = { x: 1950, y: 723 };
 
         this.zones = {
             1: { poly: [{x:610,y:284}, {x:1305,y:278}, {x:1306,y:674}, {x:1152,y:675}, {x:1151,y:743}, {x:615,y:740}], restricted: false },
@@ -99,12 +97,9 @@ class PersonnelVisualizer {
 
         for (let z = 1; z <= 4; z++) {
             let diff = (newCounts[`zone${z}`] || 0) - currentCounts[z];
-            
             if (diff > 0) {
                 while (diff > 0) {
-                    // On first update, spawn people directly in the zone
-                    if (this.isFirstUpdate) this.spawnPerson(z, true);
-                    else this.spawnPerson(z, false);
+                    this.spawnPerson(z, this.isFirstUpdate);
                     diff--;
                 }
             } else if (diff < 0) {
@@ -145,13 +140,15 @@ class PersonnelVisualizer {
             const zCurrent = zoneSequence[i];
             const zNext = zoneSequence[i+1];
             
-            // Special handling for Entry (0) to Zone 2
-            if (zCurrent === 0 && zNext === 2) {
-                fullPath.push(this.zoneWaypoints[2]); // Move to waypoint to ensure safe entry
-                continue;
+            // Special Waypoint logic for Zone 2 traversal
+            if (zCurrent === 2 || zNext === 2) {
+                const alreadyHasCorner = fullPath.some(p => p.x === this.z2SafetyCorner.x && p.y === this.z2SafetyCorner.y);
+                if (!alreadyHasCorner) fullPath.push(this.z2SafetyCorner);
             }
+
+            // Entry/Exit Logic
+            if (zCurrent === 0 && zNext === 2) continue;
             if (zCurrent === 2 && zNext === 0) {
-                fullPath.push(this.zoneWaypoints[2]);
                 fullPath.push(this.entryExit);
                 continue;
             }
@@ -159,11 +156,6 @@ class PersonnelVisualizer {
             const gateKey = zCurrent < zNext ? `${zCurrent}-${zNext}` : `${zNext}-${zCurrent}`;
             const gate = this.gates[gateKey];
             if (gate) {
-                // If leaving Z2, pass through waypoint first to clear the notch
-                if (zCurrent === 2 && !fullPath.includes(this.zoneWaypoints[2])) {
-                    fullPath.push(this.zoneWaypoints[2]);
-                }
-                
                 fullPath.push(gate[`z${zCurrent}`]);
                 fullPath.push(gate[`z${zNext}`]);
             }
@@ -202,6 +194,10 @@ class PersonnelVisualizer {
 
         for (let i = this.people.length - 1; i >= 0; i--) {
             const p = this.people[i];
+            
+            // Update Restricted state based on current location
+            p.inRestricted = this.isPointInPoly(this.zones[4].poly, { x: p.x, y: p.y });
+
             p.pulse += 0.05 * p.pulseDir;
             if (p.pulse > 1 || p.pulse < 0) p.pulseDir *= -1;
 
@@ -253,7 +249,9 @@ class PersonnelVisualizer {
 
     drawPerson(p) {
         const s = this.scale, x = p.x * s, y = p.y * s, size = 18 * s;
-        const isRestricted = this.zones[p.zone].restricted;
+        
+        // Use the current restricted state
+        const isRestricted = p.inRestricted;
         
         const color = isRestricted ? `rgba(248, 113, 113, ${0.4 + p.pulse * 0.4})` : 'rgba(240, 180, 41, 0.4)';
         const grad = this.ctx.createRadialGradient(x, y, 0, x, y, size * 1.5);
