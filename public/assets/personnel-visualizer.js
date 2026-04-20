@@ -35,7 +35,7 @@ class PersonnelVisualizer {
         };
 
         this.zones = {
-            1: { poly: [{x:610,y:280}, {x:1301,y:280}, {x:1301,y:676}, {x:1152,y:676}, {x:1154,y:747}, {x:610,y:747}], restricted: false },
+            1: { poly: [{x:610,y:280}, {x:1301,y:280}, {x:1301,y:676}, {x:1154,y:676}, {x:1154,y:747}, {x:610,y:747}], restricted: false },
             2: { poly: [{x:1345,y:280}, {x:1854,y:280}, {x:1854,y:338}, {x:2143,y:338}, {x:2143,y:513}, {x:1812,y:513}, {x:1812,y:748}, {x:1477,y:748}, {x:1477,y:679}, {x:1348,y:679}], restricted: false },
             3: { poly: [{x:610,y:788}, {x:610,y:1080}, {x:696,y:1080}, {x:696,y:1249}, {x:1085,y:1249}, {x:1085,y:1372}, {x:1296,y:1372}, {x:1296,y:1014}, {x:1154,y:1014}, {x:1154,y:788}], restricted: false },
             4: { poly: [{x:1490,y:799}, {x:1810,y:799}, {x:1810,y:1144}, {x:2294,y:1144}, {x:2294,y:1355}, {x:2060,y:1359}, {x:2060,y:1276}, {x:1849,y:1279}, {x:1850,y:1363}, {x:1353,y:1371}, {x:1353,y:1030}, {x:1491,y:1030}], restricted: true }
@@ -53,10 +53,8 @@ class PersonnelVisualizer {
         this.nextPersonId = 1;
         
         window.addEventListener('resize', () => this.resize());
-        
-        // Ensure visibility: Opening console or changing tabs often fixes rendering issues.
-        // We force multiple resizes and use IntersectionObserver to detect when the tab is shown.
         this.resize();
+        
         setTimeout(() => this.resize(), 100);
         setTimeout(() => this.resize(), 1000);
 
@@ -102,9 +100,13 @@ class PersonnelVisualizer {
         do {
             let rawX = minX + Math.random() * (maxX - minX);
             let rawY = minY + Math.random() * (maxY - minY);
-            let dx = rawX - hub.x;
-            let dy = rawY - hub.y;
-            pt = { x: hub.x + dx * 0.8, y: hub.y + dy * 0.8 };
+            
+            // Outer Bias: use square root of random to favor points further from the hub
+            let bias = Math.sqrt(Math.random() * 0.7 + 0.3); // Favor 0.3 to 1.0 range
+            pt = { 
+                x: hub.x + (rawX - hub.x) * bias, 
+                y: hub.y + (rawY - hub.y) * bias 
+            };
             attempts++;
         } while (!this.isPointInPoly(zone.poly, pt) && attempts < 100);
         return attempts >= 100 ? { ...hub } : pt;
@@ -151,7 +153,7 @@ class PersonnelVisualizer {
             const next = sequence[i+1];
             if (curr === 'outside' && next === 2) {
                 segments.push({ x: this.spawnPoint.x, y: this.spawnPoint.y, type: 'transition' });
-                segments.push({ x: 1700, y: 418, type: 'transition' });
+                segments.push({ x: 1700, y: 418, type: 'walk', zone: 2 }); // Walk to corridor waypoint
             } else if (curr === 2 && next === 'outside') {
                 segments.push({ x: this.corridor[38].x, y: this.corridor[38].y, type: 'walk', zone: 2 });
                 segments.push({ x: this.spawnPoint.x, y: this.spawnPoint.y, type: 'transition' });
@@ -193,13 +195,18 @@ class PersonnelVisualizer {
         for (let i = this.people.length - 1; i >= 0; i--) {
             const p = this.people[i];
             
-            // TRACK ZONE 4 ENTRY
-            const wasInRestricted = p.inRestricted;
+            // Removal check for exiting personnel
+            if (p.isExiting && p.path.length === 0) {
+                this.people.splice(i, 1);
+                continue;
+            }
+
             p.inRestricted = this.isPointInPoly(this.zones[4].poly, { x: p.x, y: p.y });
             
-            if (p.inRestricted && !wasInRestricted) {
+            if (p.inRestricted && !p.wasInRestricted) {
                 if (this.onZoneEntry) this.onZoneEntry(4, p.id);
             }
+            p.wasInRestricted = p.inRestricted;
 
             p.pulse += 0.05 * p.pulseDir;
             if (p.pulse > 1 || p.pulse < 0) p.pulseDir *= -1;
@@ -209,7 +216,8 @@ class PersonnelVisualizer {
                 seg = p.path[0];
                 const tdx = seg.x - p.x, tdy = seg.y - p.y;
                 const dist = Math.sqrt(tdx * tdx + tdy * tdy);
-                if (dist < 5) {
+                
+                if (dist < 10) { // Increased threshold for removal/segment change
                     p.path.shift();
                     if (p.path.length === 0) {
                         if (p.isExiting) { this.people.splice(i, 1); continue; }
