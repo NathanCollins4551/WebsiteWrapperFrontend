@@ -22,19 +22,62 @@ class PersonnelVisualizer {
         this.nextPersonId = 1;
         
         this.onZoneEntry = null;
+
+        // Travel Corridor Points
+        this.corridor = {
+            38: { x: 1640, y: 418, zone: 2 },
+            39: { x: 1019, y: 418, zone: 1 },
+            40: { x: 1019, y: 1123, zone: 3 },
+            41: { x: 1640, y: 1123, zone: 4 }
+        };
+
+        this.hubs = {
+            1: { x: 950, y: 500 },
+            2: { x: 1700, y: 600 },
+            3: { x: 950, y: 1100 },
+            4: { x: 1600, y: 1100 }
+        };
+
+        this.zones = {
+            1: { poly: [{x:610,y:280}, {x:1301,y:280}, {x:1301,y:676}, {x:1154,y:676}, {x:1154,y:747}, {x:610,y:747}], restricted: false },
+            2: { poly: [{x:1345,y:280}, {x:1854,y:280}, {x:1854,y:338}, {x:2143,y:338}, {x:2143,y:513}, {x:1812,y:513}, {x:1812,y:748}, {x:1477,y:748}, {x:1477,y:679}, {x:1348,y:679}], restricted: false },
+            3: { poly: [{x:610,y:788}, {x:610,y:1080}, {x:696,y:1080}, {x:696,y:1249}, {x:1085,y:1249}, {x:1085,y:1372}, {x:1296,y:1372}, {x:1296,y:1014}, {x:1154,y:1014}, {x:1154,y:788}], restricted: false },
+            4: { poly: [{x:1490,y:799}, {x:1810,y:799}, {x:1810,y:1144}, {x:2294,y:1144}, {x:2294,y:1355}, {x:2060,y:1359}, {x:2060,y:1276}, {x:1849,y:1279}, {x:1850,y:1363}, {x:1353,y:1371}, {x:1353,y:1030}, {x:1491,y:1030}], restricted: true }
+        };
+
+        this.adj = {
+            2: [1, 4, 'outside'],
+            1: [2, 3],
+            3: [1, 4],
+            4: [2, 3],
+            'outside': [2]
+        };
+
+        window.addEventListener('resize', () => this.resize());
+        this.resize();
+        
+        setTimeout(() => this.resize(), 100);
+        setTimeout(() => this.resize(), 1000);
+
+        if (window.IntersectionObserver) {
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) this.resize();
+            });
+            observer.observe(this.canvas);
+        }
+
+        this.animate();
     }
 
     setMode(newMode) {
         if (this.mode === newMode) return;
 
         if (newMode === 'live') {
-            // Pause simulation: Save current people and clear view
             this.simPeople = [...this.people];
             this.people = [];
             this.mode = 'live';
-            this.isFirstUpdate = true; // Force instant spawn for the first live data batch
+            this.isFirstUpdate = true;
         } else {
-            // Resume simulation: Restore saved people
             this.people = [...this.simPeople];
             this.mode = 'sim';
             this.isFirstUpdate = false;
@@ -66,6 +109,8 @@ class PersonnelVisualizer {
     getRandomPointInZone(zoneId) {
         const zone = this.zones[zoneId];
         const hub = this.hubs[zoneId];
+        if (!zone || !hub) return { x: 0, y: 0 };
+
         let pt, attempts = 0;
         let minX = Math.min(...zone.poly.map(p => p.x)), maxX = Math.max(...zone.poly.map(p => p.x));
         let minY = Math.min(...zone.poly.map(p => p.y)), maxY = Math.max(...zone.poly.map(p => p.y));
@@ -73,9 +118,7 @@ class PersonnelVisualizer {
         do {
             let rawX = minX + Math.random() * (maxX - minX);
             let rawY = minY + Math.random() * (maxY - minY);
-            
-            // Outer Bias: use square root of random to favor points further from the hub
-            let bias = Math.sqrt(Math.random() * 0.7 + 0.3); // Favor 0.3 to 1.0 range
+            let bias = Math.sqrt(Math.random() * 0.7 + 0.3);
             pt = { 
                 x: hub.x + (rawX - hub.x) * bias, 
                 y: hub.y + (rawY - hub.y) * bias 
@@ -126,7 +169,7 @@ class PersonnelVisualizer {
             const next = sequence[i+1];
             if (curr === 'outside' && next === 2) {
                 segments.push({ x: this.spawnPoint.x, y: this.spawnPoint.y, type: 'transition' });
-                segments.push({ x: 1700, y: 418, type: 'walk', zone: 2 }); // Walk to corridor waypoint
+                segments.push({ x: 1700, y: 418, type: 'walk', zone: 2 });
             } else if (curr === 2 && next === 'outside') {
                 segments.push({ x: this.corridor[38].x, y: this.corridor[38].y, type: 'walk', zone: 2 });
                 segments.push({ x: this.spawnPoint.x, y: this.spawnPoint.y, type: 'transition' });
@@ -167,15 +210,12 @@ class PersonnelVisualizer {
 
         for (let i = this.people.length - 1; i >= 0; i--) {
             const p = this.people[i];
-            
-            // Removal check for exiting personnel
             if (p.isExiting && p.path.length === 0) {
                 this.people.splice(i, 1);
                 continue;
             }
 
             p.inRestricted = this.isPointInPoly(this.zones[4].poly, { x: p.x, y: p.y });
-            
             if (p.inRestricted && !p.wasInRestricted) {
                 if (this.onZoneEntry) this.onZoneEntry(4, p.id);
             }
@@ -189,8 +229,7 @@ class PersonnelVisualizer {
                 seg = p.path[0];
                 const tdx = seg.x - p.x, tdy = seg.y - p.y;
                 const dist = Math.sqrt(tdx * tdx + tdy * tdy);
-                
-                if (dist < 10) { // Increased threshold for removal/segment change
+                if (dist < 10) {
                     p.path.shift();
                     if (p.path.length === 0) {
                         if (p.isExiting) { this.people.splice(i, 1); continue; }
