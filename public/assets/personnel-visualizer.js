@@ -1,7 +1,7 @@
 /**
  * PersonnelVisualizer.js
- * High-performance Canvas Personnel Visualizer for MakerSpace Digital Twin.
- * RESTRUCTURED: Walk-Jump-Walk architecture with strict boundary enforcement.
+ * COMPLETE REFACTOR: Travel Corridor Strategy.
+ * Implements precise zone coordinates and strict corridor-based movement.
  */
 
 class PersonnelVisualizer {
@@ -14,35 +14,33 @@ class PersonnelVisualizer {
         this.baseHeight = 1536;
 
         this.debug = false; 
-        this.entryExit = { x: 2098, y: 411 };
+        this.spawnPoint = { x: 2046, y: 419 };
         this.isFirstUpdate = true;
-        
-        // Safety Hubs (Safe navigation centers for each zone)
-        this.hubs = {
-            1: { x: 950, y: 500 },
-            2: { x: 1700, y: 600 },
-            3: { x: 950, y: 1100 },
-            4: { x: 1600, y: 1100 }
-        };
 
-        // Safety Waypoints for Entry/Exit to clear the Z4 corner
-        this.z2DoorWaypoint = { x: 1700, y: 411 };
+        // Travel Corridor Points
+        this.corridor = {
+            38: { x: 1640, y: 418, zone: 2 },
+            39: { x: 1019, y: 418, zone: 1 },
+            40: { x: 1019, y: 1123, zone: 3 },
+            41: { x: 1640, y: 1123, zone: 4 }
+        };
 
         this.zones = {
-            1: { poly: [{x:610,y:284}, {x:1305,y:278}, {x:1306,y:674}, {x:1152,y:675}, {x:1151,y:743}, {x:615,y:740}], restricted: false },
-            2: { poly: [{x:1347,y:281}, {x:1844,y:284}, {x:1852,y:343}, {x:2133,y:350}, {x:2147,y:507}, {x:1816,y:508}, {x:1805,y:749}, {x:1479,y:750}, {x:1478,y:677}, {x:1353,y:677}], restricted: false },
-            3: { poly: [{x:634,y:783}, {x:631,y:1070}, {x:718,y:1074}, {x:725,y:1261}, {x:1082,y:1248}, {x:1092,y:1382}, {x:1306,y:1381}, {x:1299,y:1015}, {x:1152,y:1020}, {x:1143,y:789}], restricted: false },
-            4: { poly: [{x:1491,y:798}, {x:1828,y:802}, {x:1829,y:1146}, {x:2276,y:1138}, {x:2284,y:1346}, {x:2075,y:1345}, {x:2069,y:1256}, {x:1839,y:1261}, {x:1836,y:1355}, {x:1367,y:1361}, {x:1361,y:1041}, {x:1517,y:1043}], restricted: true }
+            1: { poly: [{x:610,y:280}, {x:1301,y:280}, {x:1301,y:676}, {x:1154,y:676}, {x:1154,y:747}, {x:610,y:747}], restricted: false },
+            2: { poly: [{x:1345,y:280}, {x:1854,y:280}, {x:1854,y:338}, {x:2143,y:338}, {x:2143,y:513}, {x:1812,y:513}, {x:1812,y:748}, {x:1477,y:748}, {x:1477,y:679}, {x:1348,y:679}], restricted: false },
+            3: { poly: [{x:610,y:788}, {x:610,y:1080}, {x:696,y:1080}, {x:696,y:1249}, {x:1085,y:1249}, {x:1085,y:1372}, {x:1296,y:1372}, {x:1296,y:1014}, {x:1154,y:1014}, {x:1154,y:788}], restricted: false },
+            4: { poly: [{x:1490,y:799}, {x:1810,y:799}, {x:1810,y:1144}, {x:2294,y:1144}, {x:2294,y:1355}, {x:2060,y:1359}, {x:2060,y:1276}, {x:1849,y:1279}, {x:1850,y:1363}, {x:1353,y:1371}, {x:1353,y:1030}, {x:1491,y:1030}], restricted: true }
         };
 
-        this.gates = {
-            "1-2": { z1: {x:1264,y:476}, z2: {x:1375,y:476} },
-            "1-3": { z1: {x:875,y:723}, z3: {x:875,y:829} },
-            "3-4": { z3: {x:1276,y:1135}, z4: {x:1395,y:1135} },
-            "2-4": { z2: {x:1671,y:723}, z4: {x:1671,y:820} }
+        // Graph for corridor traversal
+        this.adj = {
+            2: [1, 4, 'outside'],
+            1: [2, 3],
+            3: [1, 4],
+            4: [2, 3],
+            'outside': [2]
         };
 
-        this.adj = { 0: [2], 1: [2, 3], 2: [0, 1, 4], 3: [1, 4], 4: [2, 3] };
         this.people = [];
         this.nextPersonId = 1;
         
@@ -82,7 +80,7 @@ class PersonnelVisualizer {
             pt = { x: minX + Math.random() * (maxX - minX), y: minY + Math.random() * (maxY - minY) };
             attempts++;
         } while (!this.isPointInPoly(zone.poly, pt) && attempts < 100);
-        return attempts >= 100 ? { ...this.hubs[zoneId] } : pt;
+        return attempts >= 100 ? { ...this.corridor[Object.keys(this.corridor).find(k => this.corridor[k].zone == zoneId)] } : pt;
     }
 
     updateCounts(newCounts) {
@@ -104,62 +102,50 @@ class PersonnelVisualizer {
         this.isFirstUpdate = false;
     }
 
-    findShortestPath(from, to, avoidZone4 = true) {
+    findShortestPath(from, to) {
         const queue = [[from]];
         const visited = new Set([from]);
         while (queue.length > 0) {
             const path = queue.shift();
             const node = path[path.length - 1];
-            if (node === to) return path;
+            if (node == to) return path;
             for (const neighbor of this.adj[node]) {
-                if (avoidZone4 && neighbor === 4 && from !== 4 && to !== 4) continue;
-                if (!visited.has(neighbor)) { visited.add(neighbor); queue.push([...path, neighbor]); }
+                if (!visited.has(neighbor)) {
+                    visited.add(neighbor);
+                    queue.push([...path, neighbor]);
+                }
             }
         }
-        if (avoidZone4) return this.findShortestPath(from, to, false);
         return [from, to];
     }
 
-    getGatePath(from, to, endPt) {
-        const zoneSequence = this.findShortestPath(from, to);
+    getComplexRoute(from, to, endPt) {
+        const sequence = this.findShortestPath(from, to);
         const segments = [];
-        
-        for (let i = 0; i < zoneSequence.length - 1; i++) {
-            const zCurr = zoneSequence[i];
-            const zNext = zoneSequence[i+1];
-            
-            // Current Hub (stay inside)
-            if (zCurr !== 0) segments.push({ x: this.hubs[zCurr].x, y: this.hubs[zCurr].y, type: 'walk', zone: zCurr });
 
-            // Transition Logic
-            if (zCurr === 0 && zNext === 2) {
-                segments.push({ x: this.entryExit.x, y: this.entryExit.y, type: 'jump' });
-                segments.push({ x: this.z2DoorWaypoint.x, y: this.z2DoorWaypoint.y, type: 'walk', zone: 2 });
-            } else if (zCurr === 2 && zNext === 0) {
-                segments.push({ x: this.z2DoorWaypoint.x, y: this.z2DoorWaypoint.y, type: 'walk', zone: 2 });
-                segments.push({ x: this.entryExit.x, y: this.entryExit.y, type: 'walk', zone: 2 });
-                segments.push({ x: this.entryExit.x, y: this.entryExit.y, type: 'jump' });
+        for (let i = 0; i < sequence.length - 1; i++) {
+            const curr = sequence[i];
+            const next = sequence[i+1];
+
+            if (curr === 'outside' && next === 2) {
+                segments.push({ x: this.spawnPoint.x, y: this.spawnPoint.y, type: 'transition' });
+                segments.push({ x: 1700, y: 418, type: 'transition' }); // Safe entry to corridor
+            } else if (curr === 2 && next === 'outside') {
+                segments.push({ x: this.corridor[38].x, y: this.corridor[38].y, type: 'walk', zone: 2 });
+                segments.push({ x: this.spawnPoint.x, y: this.spawnPoint.y, type: 'transition' });
             } else {
-                const gateKey = zCurr < zNext ? `${zCurr}-${zNext}` : `${zNext}-${zCurr}`;
-                const gate = this.gates[gateKey];
+                // Determine Corridor Points
+                const pA = Object.values(this.corridor).find(p => p.zone == curr);
+                const pB = Object.values(this.corridor).find(p => p.zone == next);
                 
-                if (gate) {
-                    const ptA = gate[`z${zCurr}`];
-                    const ptB = gate[`z${zNext}`];
-                    segments.push({ x: ptA.x, y: ptA.y, type: 'walk', zone: zCurr });
-                    segments.push({ x: ptB.x, y: ptB.y, type: 'jump' });
-                }
+                if (pA) segments.push({ x: pA.x, y: pA.y, type: 'walk', zone: curr });
+                if (pB) segments.push({ x: pB.x, y: pB.y, type: 'transition' });
             }
-            
-            // Next Hub (stay inside)
-            if (zNext !== 0) segments.push({ x: this.hubs[zNext].x, y: this.hubs[zNext].y, type: 'walk', zone: zNext });
         }
         
-        // Final walk to random destination
-        if (to !== 0) {
+        if (to !== 'outside') {
             segments.push({ x: endPt.x, y: endPt.y, type: 'walk', zone: to });
         }
-        
         return segments;
     }
 
@@ -167,24 +153,20 @@ class PersonnelVisualizer {
         const pt = this.getRandomPointInZone(targetZone);
         const person = {
             id: this.nextPersonId++,
-            x: instant ? pt.x : this.entryExit.x, y: instant ? pt.y : this.entryExit.y,
+            x: instant ? pt.x : this.spawnPoint.x, y: instant ? pt.y : this.spawnPoint.y,
             zone: targetZone, state: instant ? 'idle' : 'moving', isExiting: false,
-            path: instant ? [] : this.getGatePath(0, targetZone, pt),
-            // Transition Speed: Decisive movement for path clearing (6-8 pixels per frame)
-            speed: 6 + Math.random() * 2, 
-            // Wander Speed: Subtle idle movement (0.1 - 0.3 pixels per frame)
-            wanderSpeed: 0.1 + Math.random() * 0.2,
+            path: instant ? [] : this.getComplexRoute('outside', targetZone, pt),
+            speed: 7 + Math.random() * 2, wanderSpeed: 0.15 + Math.random() * 0.15,
             pulse: 0, pulseDir: 1
         };
         this.people.push(person);
     }
 
     sendToExit(person) {
-        person.path = this.getGatePath(person.zone, 0, this.entryExit);
+        person.path = this.getComplexRoute(person.zone, 'outside', this.spawnPoint);
         person.isExiting = true;
         person.state = 'moving';
-        // Increase speed for exit to clear the map quickly
-        person.speed = 6 + Math.random() * 2;
+        person.speed = 8;
     }
 
     animate() {
@@ -223,19 +205,19 @@ class PersonnelVisualizer {
                 }
             }
 
+            // BOUNDARY ENFORCEMENT
+            const nextX = p.x + dx, nextY = p.y + dy;
             if (seg && seg.type === 'walk') {
                 const poly = this.zones[seg.zone].poly;
-                if (this.isPointInPoly(poly, { x: p.x + dx, y: p.y + dy })) {
-                    p.x += dx; p.y += dy;
-                } else if (this.isPointInPoly(poly, { x: p.x + dx, y: p.y })) {
-                    p.x += dx;
-                } else if (this.isPointInPoly(poly, { x: p.x, y: p.y + dy })) {
-                    p.y += dy;
+                if (this.isPointInPoly(poly, { x: nextX, y: nextY })) {
+                    p.x = nextX; p.y = nextY;
                 } else if (p.state === 'idle') {
                     p.wanderTarget = null;
                 }
+                // If it's a walk but blocked, we don't move (avoids cutting)
             } else {
-                p.x += dx; p.y += dy;
+                // JUMPS or transitions ignore poly check
+                p.x = nextX; p.y = nextY;
             }
 
             this.drawPerson(p);
@@ -257,6 +239,17 @@ class PersonnelVisualizer {
             this.ctx.fillStyle = z.restricted ? 'rgba(255,0,0,0.1)' : 'rgba(240,180,41,0.1)';
             this.ctx.fill();
         });
+        // Draw Corridor
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.corridor[38].x * this.scale, this.corridor[38].y * this.scale);
+        this.ctx.lineTo(this.corridor[39].x * this.scale, this.corridor[39].y * this.scale);
+        this.ctx.lineTo(this.corridor[40].x * this.scale, this.corridor[40].y * this.scale);
+        this.ctx.lineTo(this.corridor[41].x * this.scale, this.corridor[41].y * this.scale);
+        this.ctx.lineTo(this.corridor[38].x * this.scale, this.corridor[38].y * this.scale);
+        this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        this.ctx.setLineDash([5, 5]);
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
     }
 
     drawPerson(p) {
