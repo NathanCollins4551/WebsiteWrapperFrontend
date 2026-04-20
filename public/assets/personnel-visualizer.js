@@ -18,6 +18,8 @@ class PersonnelVisualizer {
         this.isFirstUpdate = true;
         this.mode = 'sim';
         this.simPeople = [];
+        this.people = [];
+        this.nextPersonId = 1;
         
         this.onZoneEntry = null;
     }
