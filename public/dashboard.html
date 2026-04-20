@@ -423,9 +423,15 @@
 
     <!-- Personnel Tracking Page -->
     <div id="human-tracking-page" class="page-section">
-       <div class="section-title">
-         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; stroke: var(--accent);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-         Personnel Tracking & Zone Monitoring
+       <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+         <div style="display: flex; align-items: center; gap: 8px;">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; stroke: var(--accent);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+           Personnel Tracking & Zone Monitoring
+         </div>
+         <div style="display: flex; background: var(--surface2); padding: 4px; border-radius: 8px; border: 1px solid var(--border); gap: 4px;">
+           <button id="btn-live-mode" class="btn-sm ghost" style="padding: 4px 10px; font-size: 10px;" onclick="setTrackingMode('live')">LIVE</button>
+           <button id="btn-sim-mode" class="btn-sm primary" style="padding: 4px 10px; font-size: 10px;" onclick="setTrackingMode('sim')">SIMULATION</button>
+         </div>
        </div>
        
        <div class="instruction-card" style="margin-bottom: 16px;">
@@ -1104,6 +1110,9 @@
 <script>
   // --- Personnel Tracking Implementation ---
   let visualizer;
+  let trackingMode = 'sim';
+  let simCounts = { zone1: 1, zone2: 2, zone3: 1, zone4: 0 };
+  let simInterval;
   
   // Wait for image to load to ensure correct scaling
   const mapImg = document.querySelector('#tracking-map-container img');
@@ -1113,30 +1122,84 @@
     mapImg.onload = initVisualizer;
   }
 
+  function setTrackingMode(mode) {
+    trackingMode = mode;
+    const btnLive = document.getElementById('btn-live-mode');
+    const btnSim = document.getElementById('btn-sim-mode');
+
+    if (mode === 'live') {
+      btnLive.classList.replace('ghost', 'primary');
+      btnSim.classList.replace('primary', 'ghost');
+      clearInterval(simInterval);
+      console.log("Live mode selected - awaiting data endpoints...");
+    } else {
+      btnLive.classList.replace('primary', 'ghost');
+      btnSim.classList.replace('ghost', 'primary');
+      startSimulation();
+    }
+  }
+
   function initVisualizer() {
     visualizer = new PersonnelVisualizer('personnelCanvas', 'tracking-map-container');
-    visualizer.debug = true; // Temporary enable for alignment verification
+    visualizer.debug = true; // Safe zones always visible as requested
     
-    // Start simulation after init
-    setTimeout(simulatePersonnelMovement, 1000);
-    setInterval(simulatePersonnelMovement, 8000);
+    // Initial data load
+    visualizer.updateCounts(simCounts);
+    updateZoneUI(simCounts);
+    
+    if (trackingMode === 'sim') startSimulation();
+  }
+
+  function startSimulation() {
+    clearInterval(simInterval);
+    simInterval = setInterval(simulatePersonnelMovement, 5000);
   }
 
   function simulatePersonnelMovement() {
-    if (!visualizer) return;
+    if (!visualizer || trackingMode !== 'sim') return;
 
-    const counts = {
-      zone1: Math.floor(Math.random() * 5),
-      zone2: Math.floor(Math.random() * 4),
-      zone3: Math.floor(Math.random() * 5),
-      zone4: Math.floor(Math.random() * 3)
-    };
+    // Realistic Incremental Logic:
+    // 1-2 shifts per refresh, occasionally 3, rarely 0.
+    const numShifts = Math.random() < 0.1 ? 0 : (Math.random() < 0.2 ? 3 : (Math.random() < 0.5 ? 1 : 2));
     
-    visualizer.updateCounts(counts);
+    for(let i=0; i<numShifts; i++) {
+      const zones = ['zone1', 'zone2', 'zone3', 'zone4', 'outside'];
+      const fromZone = zones[Math.floor(Math.random() * zones.length)];
+      
+      // Determine valid targets (adjacent or enter/exit)
+      let targets = [];
+      if (fromZone === 'outside') targets = ['zone2'];
+      if (fromZone === 'zone1') targets = ['zone2', 'zone3'];
+      if (fromZone === 'zone2') targets = ['zone1', 'zone4', 'outside'];
+      if (fromZone === 'zone3') targets = ['zone1', 'zone4'];
+      if (fromZone === 'zone4') targets = ['zone2', 'zone3'];
+
+      const toZone = targets[Math.floor(Math.random() * targets.length)];
+
+      // Apply the shift if possible
+      if (fromZone === 'outside') {
+        simCounts[toZone]++;
+      } else if (toZone === 'outside') {
+        if (simCounts[fromZone] > 0) simCounts[fromZone]--;
+      } else {
+        if (simCounts[fromZone] > 0) {
+          simCounts[fromZone]--;
+          simCounts[toZone]++;
+        }
+      }
+    }
+
+    // Cap counts for visual clarity
+    Object.keys(simCounts).forEach(z => {
+      if (simCounts[z] > 5) simCounts[z] = 5;
+    });
     
-    // Update the UI boxes on the left
+    visualizer.updateCounts(simCounts);
+    updateZoneUI(simCounts);
+  }
+
+  function updateZoneUI(counts) {
     const zoneBoxes = document.querySelectorAll('#human-tracking-page .instruction-card');
-    // The boxes are: [header_card, z1, z2, z3, z4]
     if (zoneBoxes.length >= 5) {
       zoneBoxes[1].querySelector('div:nth-child(2)').innerText = counts.zone1;
       zoneBoxes[2].querySelector('div:nth-child(2)').innerText = counts.zone2;
