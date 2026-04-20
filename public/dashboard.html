@@ -1321,6 +1321,7 @@
   let trackingMode = 'sim';
   let simCounts = { zone1: 1, zone2: 2, zone3: 1, zone4: 0 };
   let simInterval;
+  let liveInterval;
   
   // Wait for image to load to ensure correct scaling
   const mapImg = document.querySelector('#tracking-map-container img');
@@ -1331,19 +1332,62 @@
   }
 
   function setTrackingMode(mode) {
+    if (trackingMode === mode && visualizer) return;
     trackingMode = mode;
+    
     const btnLive = document.getElementById('btn-live-mode');
     const btnSim = document.getElementById('btn-sim-mode');
+
+    // Update visualizer state
+    if (visualizer) visualizer.setMode(mode);
 
     if (mode === 'live') {
       btnLive.classList.replace('ghost', 'primary');
       btnSim.classList.replace('primary', 'ghost');
+      
+      // Stop simulation
       clearInterval(simInterval);
-      console.log("Live mode selected - awaiting data endpoints...");
+      
+      // Start live polling
+      fetchLiveTrackingData();
+      if (liveInterval) clearInterval(liveInterval);
+      liveInterval = setInterval(fetchLiveTrackingData, 8000);
     } else {
       btnLive.classList.replace('primary', 'ghost');
       btnSim.classList.replace('ghost', 'primary');
+      
+      // Stop live polling
+      clearInterval(liveInterval);
+      
+      // Resume simulation
       startSimulation();
+    }
+  }
+
+  async function fetchLiveTrackingData() {
+    if (trackingMode !== 'live') return;
+    
+    try {
+      const response = await fetch('https://cv.nathancollins.xyz/api/tracking/live');
+      if (!response.ok) throw new Error('Tracking API unreachable');
+      const data = await response.json();
+      
+      // Map API zone_counts to internal zone IDs
+      // Zone_TopLeft     -> zone1
+      // Zone_TopRight    -> zone2
+      // Zone_BottomLeft  -> zone3
+      // Zone_BottomRight -> zone4
+      const counts = {
+        zone1: data.zone_counts.Zone_TopLeft || 0,
+        zone2: data.zone_counts.Zone_TopRight || 0,
+        zone3: data.zone_counts.Zone_BottomLeft || 0,
+        zone4: data.zone_counts.Zone_BottomRight || 0
+      };
+      
+      if (visualizer) visualizer.updateCounts(counts);
+      updateZoneUI(counts);
+    } catch (err) {
+      console.warn('Live tracking fetch failed:', err);
     }
   }
 
@@ -1359,10 +1403,14 @@
     };
 
     // Initial data load
-    visualizer.updateCounts(simCounts);
-    updateZoneUI(simCounts);
-    
-    if (trackingMode === 'sim') startSimulation();
+    if (trackingMode === 'sim') {
+      visualizer.updateCounts(simCounts);
+      updateZoneUI(simCounts);
+      startSimulation();
+    } else {
+      fetchLiveTrackingData();
+      liveInterval = setInterval(fetchLiveTrackingData, 8000);
+    }
   }
 
   function startSimulation() {

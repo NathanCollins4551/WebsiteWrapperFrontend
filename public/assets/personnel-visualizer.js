@@ -16,56 +16,27 @@ class PersonnelVisualizer {
         this.debug = false; 
         this.spawnPoint = { x: 2046, y: 419 };
         this.isFirstUpdate = true;
+        this.mode = 'sim';
+        this.simPeople = [];
         
         this.onZoneEntry = null;
+    }
 
-        // Travel Corridor Points
-        this.corridor = {
-            38: { x: 1640, y: 418, zone: 2 },
-            39: { x: 1019, y: 418, zone: 1 },
-            40: { x: 1019, y: 1123, zone: 3 },
-            41: { x: 1640, y: 1123, zone: 4 }
-        };
+    setMode(newMode) {
+        if (this.mode === newMode) return;
 
-        this.hubs = {
-            1: { x: 950, y: 500 },
-            2: { x: 1700, y: 600 },
-            3: { x: 950, y: 1100 },
-            4: { x: 1600, y: 1100 }
-        };
-
-        this.zones = {
-            1: { poly: [{x:610,y:280}, {x:1301,y:280}, {x:1301,y:676}, {x:1154,y:676}, {x:1154,y:747}, {x:610,y:747}], restricted: false },
-            2: { poly: [{x:1345,y:280}, {x:1854,y:280}, {x:1854,y:338}, {x:2143,y:338}, {x:2143,y:513}, {x:1812,y:513}, {x:1812,y:748}, {x:1477,y:748}, {x:1477,y:679}, {x:1348,y:679}], restricted: false },
-            3: { poly: [{x:610,y:788}, {x:610,y:1080}, {x:696,y:1080}, {x:696,y:1249}, {x:1085,y:1249}, {x:1085,y:1372}, {x:1296,y:1372}, {x:1296,y:1014}, {x:1154,y:1014}, {x:1154,y:788}], restricted: false },
-            4: { poly: [{x:1490,y:799}, {x:1810,y:799}, {x:1810,y:1144}, {x:2294,y:1144}, {x:2294,y:1355}, {x:2060,y:1359}, {x:2060,y:1276}, {x:1849,y:1279}, {x:1850,y:1363}, {x:1353,y:1371}, {x:1353,y:1030}, {x:1491,y:1030}], restricted: true }
-        };
-
-        this.adj = {
-            2: [1, 4, 'outside'],
-            1: [2, 3],
-            3: [1, 4],
-            4: [2, 3],
-            'outside': [2]
-        };
-
-        this.people = [];
-        this.nextPersonId = 1;
-        
-        window.addEventListener('resize', () => this.resize());
-        this.resize();
-        
-        setTimeout(() => this.resize(), 100);
-        setTimeout(() => this.resize(), 1000);
-
-        if (window.IntersectionObserver) {
-            const observer = new IntersectionObserver((entries) => {
-                if (entries[0].isIntersecting) this.resize();
-            });
-            observer.observe(this.canvas);
+        if (newMode === 'live') {
+            // Pause simulation: Save current people and clear view
+            this.simPeople = [...this.people];
+            this.people = [];
+            this.mode = 'live';
+            this.isFirstUpdate = true; // Force instant spawn for the first live data batch
+        } else {
+            // Resume simulation: Restore saved people
+            this.people = [...this.simPeople];
+            this.mode = 'sim';
+            this.isFirstUpdate = false;
         }
-
-        this.animate();
     }
 
     resize() {
