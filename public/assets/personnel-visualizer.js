@@ -1,7 +1,7 @@
 /**
  * PersonnelVisualizer.js
  * High-performance Canvas Personnel Visualizer for MakerSpace Digital Twin.
- * Handles ripple movement, strict safe-zone pathfinding, and idle wandering.
+ * Handles strict pathfinding through gates and direct multi-zone movement.
  */
 
 class PersonnelVisualizer {
@@ -10,7 +10,6 @@ class PersonnelVisualizer {
         this.container = document.getElementById(containerId);
         this.ctx = this.canvas.getContext('2d');
         
-        // Logical resolution
         this.baseWidth = 2752;
         this.baseHeight = 1536;
 
@@ -24,7 +23,6 @@ class PersonnelVisualizer {
             4: { poly: [{x:1491,y:798}, {x:1828,y:802}, {x:1829,y:1146}, {x:2276,y:1138}, {x:2284,y:1346}, {x:2075,y:1345}, {x:2069,y:1256}, {x:1839,y:1261}, {x:1836,y:1355}, {x:1367,y:1361}, {x:1361,y:1041}, {x:1517,y:1043}], restricted: true }
         };
 
-        // Transition Gates: Each gate has a Z1 side and a Z2 side coordinate
         this.gates = {
             "1-2": { z1: {x:1264,y:476}, z2: {x:1375,y:476} },
             "1-3": { z1: {x:875,y:723}, z3: {x:875,y:829} },
@@ -32,7 +30,6 @@ class PersonnelVisualizer {
             "4-2": { z4: {x:1671,y:820}, z2: {x:1671,y:723} }
         };
 
-        // Graph of adjacency (including 0 for Outside)
         this.adj = {
             0: [2],
             1: [2, 3],
@@ -89,82 +86,75 @@ class PersonnelVisualizer {
     }
 
     updateCounts(newCounts) {
-        // Calculate current distribution of "settled" people
+        // Simple logic: Balance counts by spawning or exiting people
+        // But use complex paths to ensure they follow gates
         const currentCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
         this.people.forEach(p => {
-            if (p.state === 'idle' || (p.state === 'moving' && !p.isExiting)) {
-                currentCounts[p.zone]++;
-            }
+            if (!p.isExiting) currentCounts[p.zone]++;
         });
 
-        const deltas = {
-            1: (newCounts.zone1 || 0) - currentCounts[1],
-            2: (newCounts.zone2 || 0) - currentCounts[2],
-            3: (newCounts.zone3 || 0) - currentCounts[3],
-            4: (newCounts.zone4 || 0) - currentCounts[4]
-        };
-
-        // Ripple Logic: Resolve deltas by moving people between adjacent zones
-        let changed = true;
-        while (changed) {
-            changed = false;
-            for (let z = 1; z <= 4; z++) {
-                if (deltas[z] > 0) { // Needs +1
-                    const path = this.findShortestPathTo0(z); // Path from 0 to Z
-                    // Ripple backwards from target to entry
-                    for (let i = path.length - 1; i > 0; i--) {
-                        const to = path[i];
-                        const from = path[i-1];
-                        if (from === 0) {
-                            this.spawnPerson(to);
-                        } else {
-                            const person = this.people.find(p => p.zone === from && p.state === 'idle');
-                            if (person) {
-                                this.movePersonToZone(person, to);
-                            } else {
-                                continue; // Can't ripple yet, wait for someone to become idle
-                            }
-                        }
-                        deltas[to]--;
-                        if (from !== 0) deltas[from]++;
-                        changed = true;
-                        break; 
-                    }
-                } else if (deltas[z] < 0) { // Needs -1 (Surplus)
-                    const path = this.findShortestPathTo0(z); // Path from Z to 0
-                    // Ripple forwards from surplus to exit
-                    const to = path[1];
-                    const from = path[0];
-                    const person = this.people.find(p => p.zone === from && p.state === 'idle');
-                    if (person) {
-                        if (to === 0) this.sendToExit(person);
-                        else this.movePersonToZone(person, to);
-                        deltas[from]++;
-                        if (to !== 0) deltas[to]--;
-                        changed = true;
-                    }
+        for (let z = 1; z <= 4; z++) {
+            let diff = (newCounts[`zone${z}`] || 0) - currentCounts[z];
+            
+            if (diff > 0) { // Add people
+                while (diff > 0) {
+                    this.spawnPerson(z);
+                    diff--;
+                }
+            } else if (diff < 0) { // Remove people
+                while (diff < 0) {
+                    const person = this.people.find(p => p.zone === z && !p.isExiting);
+                    if (person) this.sendToExit(person);
+                    diff++;
                 }
             }
         }
     }
 
-    findShortestPathTo0(startZone) {
-        const queue = [[startZone]];
-        const visited = new Set([startZone]);
+    findShortestPath(from, to, avoidZone4 = true) {
+        const queue = [[from]];
+        const visited = new Set([from]);
         while (queue.length > 0) {
             const path = queue.shift();
             const node = path[path.length - 1];
-            if (node === 0) return path;
+            if (node === to) return path;
             for (const neighbor of this.adj[node]) {
-                // Avoid Zone 4 unless it's the start or end
-                if (neighbor === 4 && startZone !== 4) continue;
+                if (avoidZone4 && neighbor === 4 && from !== 4 && to !== 4) continue;
                 if (!visited.has(neighbor)) {
                     visited.add(neighbor);
                     queue.push([...path, neighbor]);
                 }
             }
         }
-        return [startZone, 0]; // Fallback
+        // If no path without zone 4, try again allowing it
+        if (avoidZone4) return this.findShortestPath(from, to, false);
+        return [from, to];
+    }
+
+    getGatePath(from, to, endPt) {
+        const zoneSequence = this.findShortestPath(from, to);
+        const fullPath = [];
+        
+        for (let i = 0; i < zoneSequence.length - 1; i++) {
+            const zCurrent = zoneSequence[i];
+            const zNext = zoneSequence[i+1];
+            
+            // Skip 0-2 gate as Entry is the gate
+            if (zCurrent === 0 && zNext === 2) continue;
+            if (zCurrent === 2 && zNext === 0) {
+                fullPath.push(this.entryExit);
+                continue;
+            }
+
+            const gateKey = zCurrent < zNext ? `${zCurrent}-${zNext}` : `${zNext}-${zCurrent}`;
+            const gate = this.gates[gateKey];
+            if (gate) {
+                fullPath.push(gate[`z${zCurrent}`]);
+                fullPath.push(gate[`z${zNext}`]);
+            }
+        }
+        fullPath.push(endPt);
+        return fullPath;
     }
 
     spawnPerson(targetZone) {
@@ -173,47 +163,22 @@ class PersonnelVisualizer {
             id: this.nextPersonId++,
             x: this.entryExit.x, y: this.entryExit.y,
             zone: targetZone, state: 'moving', isExiting: false,
-            path: this.getGatePath(2, targetZone, this.entryExit, pt),
-            speed: 2 + Math.random() * 2, wanderSpeed: 0.2 + Math.random() * 0.3,
+            path: this.getGatePath(0, targetZone, pt),
+            speed: 2.5 + Math.random() * 1.5, wanderSpeed: 0.2 + Math.random() * 0.3,
             pulse: 0, pulseDir: 1
         };
         this.people.push(person);
     }
 
-    movePersonToZone(person, nextZone) {
-        const targetPt = this.getRandomPointInZone(nextZone);
-        person.path = this.getGatePath(person.zone, nextZone, {x: person.x, y: person.y}, targetPt);
-        person.zone = nextZone;
-        person.state = 'moving';
-    }
-
     sendToExit(person) {
-        person.path = this.getGatePath(person.zone, 2, {x: person.x, y: person.y}, this.entryExit);
+        person.path = this.getGatePath(person.zone, 0, this.entryExit);
         person.isExiting = true;
         person.state = 'moving';
-    }
-
-    getGatePath(from, to, startPt, endPt) {
-        const path = [];
-        if (from === to) return [endPt];
-
-        const gateKey = from < to ? `${from}-${to}` : `${to}-${from}`;
-        const gate = this.gates[gateKey];
-        if (gate) {
-            // Push gate side coordinates to ensure we walk THROUGH the gate
-            path.push(gate[`z${from}`]);
-            path.push(gate[`z${to}`]);
-        }
-        path.push(endPt);
-        return path;
     }
 
     animate() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         if (this.debug) this.drawDebugZones();
-
-        const now = Date.now();
-        this.lastUpdateTime = now;
 
         for (let i = this.people.length - 1; i >= 0; i--) {
             const p = this.people[i];
@@ -268,19 +233,21 @@ class PersonnelVisualizer {
 
     drawPerson(p) {
         const s = this.scale, x = p.x * s, y = p.y * s, size = 18 * s;
-        this.ctx.beginPath();
-        this.ctx.ellipse(x, y + (size * 0.4), size * 0.6, size * 0.3, 0, 0, Math.PI * 2);
-        this.ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        this.ctx.fill();
         const isRestricted = this.zones[p.zone].restricted;
+        
+        // Glow/Aura
         const color = isRestricted ? `rgba(248, 113, 113, ${0.4 + p.pulse * 0.4})` : 'rgba(240, 180, 41, 0.4)';
         const grad = this.ctx.createRadialGradient(x, y, 0, x, y, size * 1.5);
         grad.addColorStop(0, color); grad.addColorStop(1, 'rgba(0,0,0,0)');
         this.ctx.beginPath(); this.ctx.arc(x, y, size * 1.5, 0, Math.PI * 2);
         this.ctx.fillStyle = grad; this.ctx.fill();
+        
+        // Body
         this.ctx.beginPath(); this.ctx.arc(x, y, size * 0.7, 0, Math.PI * 2);
         this.ctx.fillStyle = isRestricted ? '#f87171' : '#F0B429';
         this.ctx.fill();
+        
+        // Head highlight
         this.ctx.beginPath(); this.ctx.arc(x, y - (size * 0.1), size * 0.3, 0, Math.PI * 2);
         this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
         this.ctx.fill();
