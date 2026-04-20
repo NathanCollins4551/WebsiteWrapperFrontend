@@ -170,7 +170,10 @@ class PersonnelVisualizer {
             x: instant ? pt.x : this.entryExit.x, y: instant ? pt.y : this.entryExit.y,
             zone: targetZone, state: instant ? 'idle' : 'moving', isExiting: false,
             path: instant ? [] : this.getGatePath(0, targetZone, pt),
-            speed: 2.5 + Math.random() * 1.5, wanderSpeed: 0.2 + Math.random() * 0.3,
+            // Transition Speed: Decisive movement for path clearing (6-8 pixels per frame)
+            speed: 6 + Math.random() * 2, 
+            // Wander Speed: Subtle idle movement (0.1 - 0.3 pixels per frame)
+            wanderSpeed: 0.1 + Math.random() * 0.2,
             pulse: 0, pulseDir: 1
         };
         this.people.push(person);
@@ -180,6 +183,8 @@ class PersonnelVisualizer {
         person.path = this.getGatePath(person.zone, 0, this.entryExit);
         person.isExiting = true;
         person.state = 'moving';
+        // Increase speed for exit to clear the map quickly
+        person.speed = 6 + Math.random() * 2;
     }
 
     animate() {
