@@ -352,6 +352,12 @@
         </svg>
         Personnel Tracking
       </a>
+      <a class="nav-item" href="#" data-page="ai-assistant">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        AI Assistant
+      </a>
     </div>
 
     <div class="sidebar-section">
@@ -526,6 +532,34 @@
                <button class="btn-sm primary" style="width: 100%; justify-content: center;" onclick="fetchLiveTrackingData()">Retry Connection</button>
              </div>
            </div>
+         </div>
+       </div>
+    </div>
+
+    <!-- AI Assistant Page -->
+    <div id="ai-assistant-page" class="page-section">
+       <div class="section-title">
+         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="stroke: var(--accent);">
+           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+         </svg>
+         MakerSpace AI Assistant
+       </div>
+
+       <div class="instruction-card" style="flex: 1; display: flex; flex-direction: column; min-height: 0; background: rgba(13, 20, 32, 0.5); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+         <div id="ai-chat-history" class="font-mono" style="flex: 1; overflow-y: auto; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; background: rgba(8, 12, 18, 0.4); font-size: 13px; line-height: 1.6; display: flex; flex-direction: column; gap: 12px;">
+           <div style="color: var(--muted); text-align: center; margin: auto; opacity: 0.5;">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="width: 48px; height: 48px; margin: 0 auto 12px; display: block;">
+               <path d="M12 8V4m0 0L8 8m4-4l4 4m-4 12v-4m0 0l4-4m-4 4l-4-4"/>
+             </svg>
+             Awaiting Command... Ask me about safety protocols or machine status.
+           </div>
+         </div>
+         
+         <div style="display: flex; gap: 12px; background: var(--surface2); padding: 8px; border-radius: 10px; border: 1px solid var(--border);">
+           <input type="text" id="ai-chat-input" placeholder="Type your message..." style="flex: 1; background: transparent; border: none; padding: 8px 12px; color: var(--text); outline: none; font-family: inherit;">
+           <button id="ai-send-btn" class="btn-sm primary" style="padding: 8px 24px; border-radius: 6px; font-weight: 600; letter-spacing: 0.05em;">
+             SEND
+           </button>
          </div>
        </div>
     </div>
@@ -1320,6 +1354,96 @@
       setTimeout(() => div.remove(), 300);
     };
   }
+
+  // --- AI Assistant Logic ---
+  const aiChatInput = document.getElementById('ai-chat-input');
+  const aiSendBtn = document.getElementById('ai-send-btn');
+  const aiChatHistory = document.getElementById('ai-chat-history');
+
+  function appendToHistory(role, text) {
+    if (aiChatHistory.querySelector('div[style*="text-align: center"]')) {
+      aiChatHistory.innerHTML = '';
+    }
+
+    const msgDiv = document.createElement('div');
+    msgDiv.style.marginBottom = '8px';
+    msgDiv.style.padding = '10px 14px';
+    msgDiv.style.borderRadius = '8px';
+    
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const label = role === 'user' ? 'OPERATOR' : 'AI ASSISTANT';
+    const labelColor = role === 'user' ? 'var(--accent)' : 'var(--success)';
+    const bgColor = role === 'user' ? 'rgba(240,180,41,0.05)' : 'rgba(52,211,153,0.05)';
+    const borderColor = role === 'user' ? 'rgba(240,180,41,0.1)' : 'rgba(52,211,153,0.1)';
+
+    msgDiv.style.background = bgColor;
+    msgDiv.style.border = `1px solid ${borderColor}`;
+
+    msgDiv.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <span style="font-size: 10px; font-weight: 700; color: ${labelColor}; letter-spacing: 0.05em;">${label}</span>
+        <span style="font-size: 9px; color: var(--muted);">${time}</span>
+      </div>
+      <div style="color: var(--text); font-size: 13px; white-space: pre-wrap;">${text}</div>
+    `;
+
+    aiChatHistory.appendChild(msgDiv);
+    aiChatHistory.scrollTop = aiChatHistory.scrollHeight;
+  }
+
+  async function sendMessageToAI() {
+    const message = aiChatInput.value.trim();
+    if (!message) return;
+
+    // UI Updates
+    aiChatInput.value = '';
+    aiChatInput.disabled = true;
+    aiSendBtn.disabled = true;
+    aiSendBtn.innerText = 'WAITING...';
+    
+    appendToHistory('user', message);
+
+    try {
+      const response = await fetch("https://twinagent.quangphuly.online/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          message: message, 
+          session_id: "makerspace-session-1", 
+          convai_mode: true 
+        })
+      });
+
+      if (!response.ok) throw new Error('API Error');
+      
+      const data = await response.json();
+      const aiResponse = data.convai?.spoken_answer || data.response || "I encountered an issue processing your request.";
+      
+      appendToHistory('ai', aiResponse);
+
+      // Web Speech API
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); // Stop current speech
+        const utterance = new SpeechSynthesisUtterance(aiResponse);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch (error) {
+      console.error("AI Assistant Error:", error);
+      appendToHistory('ai', "System Error: Unable to connect to the MakerSpace AI Assistant. Please check your network connection.");
+    } finally {
+      aiChatInput.disabled = false;
+      aiSendBtn.disabled = false;
+      aiSendBtn.innerText = 'SEND';
+      aiChatInput.focus();
+    }
+  }
+
+  aiSendBtn.addEventListener('click', sendMessageToAI);
+  aiChatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessageToAI();
+  });
 
   // Initial load
   loadPrefs();
