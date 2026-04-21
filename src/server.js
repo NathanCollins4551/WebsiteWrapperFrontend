@@ -66,6 +66,20 @@ app.use('/unity', (req, res, next) => {
 // 3. API routes
 app.use('/api/auth', authRoutes);
 
+// Video Stream Proxy
+app.get('/api/video', (req, res) => {
+  const https = require('https');
+  const proxyReq = https.request('https://cv.nathancollins.xyz/api/tracking/video_feed', (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(res);
+  });
+  proxyReq.on('error', (e) => {
+    console.error('Video proxy error:', e);
+    res.status(500).end();
+  });
+  proxyReq.end();
+});
+
 // 4. General static files
 app.use(express.static(path.join(__dirname, '../public'), {
   setHeaders: (res, filePath) => {
