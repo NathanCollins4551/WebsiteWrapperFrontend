@@ -1519,23 +1519,30 @@
 
     if (trackingMode === 'live' && cameraEnabled) {
       // 40/60 Split Layout
-      leftCol.style.width = '40%';
-      grid.style.flexDirection = 'row';
+      leftCol.style.width = 'auto';
+      leftCol.style.flex = '40 1 0%';
       grid.style.display = 'grid';
       grid.style.gridTemplateColumns = '1fr 1fr';
       grid.style.flex = 'none';
       camera.style.display = 'flex';
-      map.style.flex = '0.6';
+      map.style.flex = '60 1 0%';
       labels.forEach(l => l.style.display = 'none');
     } else {
       // Original Thin Sidebar Layout
       leftCol.style.width = '140px';
+      leftCol.style.flex = '0 0 140px';
       grid.style.display = 'flex';
       grid.style.flexDirection = 'column';
       grid.style.flex = '1';
       camera.style.display = 'none';
-      map.style.flex = '1';
+      map.style.flex = '1 1 0%';
       labels.forEach(l => l.style.display = 'block');
+    }
+    
+    // Resize visualizer canvas after DOM updates
+    if (visualizer) {
+      setTimeout(() => visualizer.resize(), 50);
+      setTimeout(() => visualizer.resize(), 350); // After transition ends
     }
   }
 
