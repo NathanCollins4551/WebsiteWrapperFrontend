@@ -493,31 +493,46 @@
        </div>
 
        <div style="flex: 1; display: flex; flex-direction: row; gap: 16px; min-height: 0;">
-         <!-- Status Summary (Sidebar on the left) -->
-         <div style="display: flex; flex-direction: column; gap: 12px; width: 140px; flex-shrink: 0;">
-           <div class="instruction-card" style="padding: 16px 12px; margin-bottom: 0; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
-             <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px;">Zone 1</div>
-             <div style="font-size: 24px; font-weight: 700; color: var(--accent);">--</div>
-             <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Personnel</div>
+         <!-- Left Column: Status Grid & Camera -->
+         <div style="display: flex; flex-direction: column; gap: 16px; width: 320px; flex-shrink: 0;">
+           <!-- Zone Status Grid (2x2) -->
+           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+             <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center; display: flex; flex-direction: column; justify-content: center; background: rgba(240,180,41,0.03);">
+               <div style="font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 2px;">Zone 1</div>
+               <div style="font-size: 20px; font-weight: 700; color: var(--accent);">--</div>
+             </div>
+             <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center; display: flex; flex-direction: column; justify-content: center; background: rgba(240,180,41,0.03);">
+               <div style="font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 2px;">Zone 2</div>
+               <div style="font-size: 20px; font-weight: 700; color: var(--accent);">--</div>
+             </div>
+             <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center; display: flex; flex-direction: column; justify-content: center; background: rgba(240,180,41,0.03);">
+               <div style="font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 2px;">Zone 3</div>
+               <div style="font-size: 20px; font-weight: 700; color: var(--accent);">--</div>
+             </div>
+             <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center; display: flex; flex-direction: column; justify-content: center; border-color: rgba(248,113,113,0.2); background: rgba(248,113,113,0.03);">
+               <div style="font-size: 10px; color: var(--danger); text-transform: uppercase; margin-bottom: 2px;">Zone 4 (R)</div>
+               <div style="font-size: 20px; font-weight: 700; color: var(--danger);">--</div>
+             </div>
            </div>
-           <div class="instruction-card" style="padding: 16px 12px; margin-bottom: 0; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
-             <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px;">Zone 2</div>
-             <div style="font-size: 24px; font-weight: 700; color: var(--accent);">--</div>
-             <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Personnel</div>
-           </div>
-           <div class="instruction-card" style="padding: 16px 12px; margin-bottom: 0; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
-             <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px;">Zone 3</div>
-             <div style="font-size: 24px; font-weight: 700; color: var(--accent);">--</div>
-             <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Personnel</div>
-           </div>
-           <div class="instruction-card" style="padding: 16px 12px; margin-bottom: 0; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; border-color: rgba(248,113,113,0.2);">
-             <div style="font-size: 11px; color: var(--danger); text-transform: uppercase; margin-bottom: 4px;">Zone 4 (R)</div>
-             <div style="font-size: 24px; font-weight: 700; color: var(--danger);">--</div>
-             <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">Personnel</div>
+
+           <!-- Camera Feed Container (Hidden by default) -->
+           <div id="camera-feed-container" style="display: none; flex-direction: column; gap: 8px; flex: 1; min-height: 0;">
+             <div class="section-title" style="font-size: 11px; padding: 6px 10px; background: var(--surface2); border-radius: 6px; border: 1px solid var(--border);">
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px; stroke: var(--accent);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+               Live Camera
+               <button class="btn-sm ghost" style="margin-left: auto; padding: 2px 6px; font-size: 8px;" onclick="refreshStream()">REFRESH</button>
+             </div>
+             <div style="flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
+               <img id="cvStream" src="" alt="Live Stream" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+               <div id="stream-placeholder" style="display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--muted);">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 32px; height: 32px; opacity: 0.3;"><path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"/></svg>
+                 <span style="font-size: 10px;">Offline</span>
+               </div>
+             </div>
            </div>
          </div>
 
-         <!-- Map Container -->
+         <!-- Right Column: Map Container -->
          <div id="tracking-map-container" style="flex: 1; position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
            <img src="/assets/makerspace_zones_with_key.png" alt="MakerSpace Zones Map" style="max-width: 100%; max-height: 100%; object-fit: contain;">
            <canvas id="personnelCanvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
@@ -531,22 +546,6 @@
                <h4 style="margin-bottom: 8px;">Service Unavailable</h4>
                <p style="font-size: 13px; color: var(--muted); margin-bottom: 24px;">The live tracking service is not currently running. Check your connection or try again.</p>
                <button class="btn-sm primary" style="width: 100%; justify-content: center;" onclick="fetchLiveTrackingData()">Retry Connection</button>
-             </div>
-           </div>
-         </div>
-
-         <!-- Camera Feed Container (Hidden by default) -->
-         <div id="camera-feed-container" style="display: none; flex-direction: column; gap: 12px; flex: 1; min-width: 320px; max-width: 500px;">
-           <div class="section-title" style="font-size: 12px; background: var(--surface2); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
-             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px; stroke: var(--accent);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-             Live CV Camera Feed
-             <button class="btn-sm ghost" style="margin-left: auto; padding: 2px 8px; font-size: 9px;" onclick="refreshStream()">REFRESH</button>
-           </div>
-           <div style="flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
-             <img id="cvStream" src="" alt="Live Stream" style="width: 100%; height: 100%; object-fit: cover; display: none;">
-             <div id="stream-placeholder" style="display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--muted);">
-               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; opacity: 0.3;"><path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"/></svg>
-               <span style="font-size: 11px;">Camera Offline</span>
              </div>
            </div>
          </div>
