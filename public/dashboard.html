@@ -1444,15 +1444,25 @@
     appendToHistory('user', message);
 
     try {
-      console.log("AI Chat Request:", { message, session_id: messageSessionId });
+      const username = document.getElementById('navUsername')?.textContent || 'anonymous';
+      const timestamp = new Date().toISOString();
+      
+      console.log("AI Chat Request:", { message, session_id: messageSessionId, user: username, timestamp });
+      
       const response = await fetch("https://twinagent.quangphuly.online/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache"
+        },
         body: JSON.stringify({ 
           message: message, 
           session_id: messageSessionId, 
+          user: username,
+          timestamp: timestamp,
           convai_mode: true 
-        })
+        }),
+        cache: 'no-cache'
       });
 
       if (!response.ok) throw new Error('API Error');
