@@ -1658,10 +1658,10 @@
       // Stop simulation
       clearInterval(simInterval);
       
-      // Start live polling (every 6 seconds as requested)
+      // Start live polling (every 4 seconds)
       fetchLiveTrackingData();
       if (liveInterval) clearInterval(liveInterval);
-      liveInterval = setInterval(fetchLiveTrackingData, 6000);
+      liveInterval = setInterval(fetchLiveTrackingData, 4000);
     } else {
       btnLive.classList.replace('primary', 'ghost');
       btnSim.classList.replace('ghost', 'primary');
@@ -1759,13 +1759,13 @@
       startSimulation();
     } else {
       fetchLiveTrackingData();
-      liveInterval = setInterval(fetchLiveTrackingData, 6000);
+      liveInterval = setInterval(fetchLiveTrackingData, 4000);
     }
   }
 
   function startSimulation() {
     clearInterval(simInterval);
-    simInterval = setInterval(simulatePersonnelMovement, 6000);
+    simInterval = setInterval(simulatePersonnelMovement, 4000);
   }
 
   let lastZone4Entry = 0;
