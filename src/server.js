@@ -1,114 +1,63 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 
+// Internal Modules
 const authRoutes = require('./routes/auth');
-const { requireAuth } = require('./middleware/auth');
+const apiRoutes = require('./routes/api');
+const pageRoutes = require('./routes/pages');
+const { securityHeaders } = require('./middleware/security');
+const { handleUnityAssets } = require('./middleware/unity');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
-// 1. GLOBAL HEADER ENFORCEMENT
-// Ensures Cross-Origin Isolation for the entire site
-app.use((req, res, next) => {
-  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  next();
-});
+// 1. Security & Core Middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for now as Unity needs various external resources
+  crossOriginEmbedderPolicy: { policy: "require-corp" },
+  crossOriginOpenerPolicy: { policy: "same-origin" },
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+app.use(securityHeaders);
 
-const corsOrigin = process.env.ALLOWED_ORIGIN || [
-  'http://localhost:3000',
-  'https://makerspace.nathancollins.xyz'
-];
 app.use(cors({
-  origin: corsOrigin,
+  origin: process.env.ALLOWED_ORIGIN || ['http://localhost:3000', 'https://makerspace.nathancollins.xyz'],
   credentials: true
 }));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// 2. Unity Static Assets (Protected)
-app.use('/unity', (req, res, next) => {
-  // Check auth but allow the index page to handle its own redirect logic
-  const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
-  if (!token) {
-    if (req.path === '/' || req.path === '/index.html' || req.path === '') {
-      return res.redirect('/login');
-    }
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-}, requireAuth, express.static(path.join(__dirname, '../public/unity'), {
-  setHeaders: (res, filePath) => {
-    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    
-    if (filePath.toLowerCase().endsWith('.unityweb')) {
-      res.setHeader('Content-Encoding', 'br');
-      if (filePath.toLowerCase().endsWith('.wasm.unityweb')) {
-        res.setHeader('Content-Type', 'application/wasm');
-      } else if (filePath.toLowerCase().endsWith('.framework.js.unityweb')) {
-        res.setHeader('Content-Type', 'application/javascript');
-      } else if (filePath.toLowerCase().endsWith('.data.unityweb')) {
-        res.setHeader('Content-Type', 'application/octet-stream');
-      }
-    }
-  }
-}));
+// 2. Specialized Asset Serving
+// Unity requires specific headers and auth check
+app.use('/unity', handleUnityAssets);
 
-// 3. API routes
+// 3. Application Routes
 app.use('/api/auth', authRoutes);
+app.use('/api', apiRoutes);
+app.use('/', pageRoutes);
 
-// Video Stream Proxy
-app.get('/api/video', (req, res) => {
-  const https = require('https');
-  const proxyReq = https.request('https://cv.nathancollins.xyz/api/tracking/video_feed', (proxyRes) => {
-    res.writeHead(proxyRes.statusCode, proxyRes.headers);
-    proxyRes.pipe(res);
-  });
-  proxyReq.on('error', (e) => {
-    console.error('Video proxy error:', e);
-    res.status(500).end();
-  });
-  proxyReq.end();
-});
-
-// 4. General static files
+// 4. General Static Files
 app.use(express.static(path.join(__dirname, '../public'), {
-  setHeaders: (res, filePath) => {
+  setHeaders: (res) => {
+    // Keep COOP/COEP for all static files
     res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   }
 }));
 
-// 5. Public HTML routes
-app.get(['/', '/login'], (_req, res) => res.sendFile(path.join(__dirname, '../public/login.html')));
-app.get('/register', (_req, res) => res.sendFile(path.join(__dirname, '../public/register.html')));
-app.get('/verify-2fa', (_req, res) => res.sendFile(path.join(__dirname, '../public/verify-2fa.html')));
-
-// 6. Protected HTML routes
-app.get('/setup-2fa', requireAuth, (_req, res) => res.sendFile(path.join(__dirname, '../public/setup-2fa.html')));
-app.get('/dashboard', requireAuth, (_req, res) => res.sendFile(path.join(__dirname, '../public/dashboard.html')));
-
-// 7. SPA fallback for /unity (ONLY for the index page, not assets)
-app.get(['/unity', '/unity/index.html'], requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/unity/index.html'));
+// 5. Fallback Handler (404)
+// Redirect unknown routes to login
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, '../public/login.html'));
 });
 
-// 8. 404 handler
-app.use((_req, res) => res.status(404).sendFile(path.join(__dirname, '../public/login.html')));
-
-// Start server
+// Start Server
 app.listen(PORT, () => {
   console.log(`\n✅ Frontend running on http://localhost:${PORT}`);
-  console.log(`🔗 Backend: ${BACKEND_URL}`);
-  console.log(`📡 CORS origin: ${corsOrigin}\n`);
+  console.log(`🔗 Backend: ${process.env.BACKEND_URL || 'http://localhost:5000'}\n`);
 });

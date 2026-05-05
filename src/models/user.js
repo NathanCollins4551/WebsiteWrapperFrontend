@@ -1,21 +1,21 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+/**
+ * User Schema for local database management
+ */
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
     unique: true,
-    trim: true,
-    minlength: 3,
-    maxlength: 30
+    trim: true
   },
   email: {
     type: String,
     required: true,
     unique: true,
-    lowercase: true,
-    trim: true
+    lowercase: true
   },
   password: {
     type: String,
@@ -27,62 +27,33 @@ const userSchema = new mongoose.Schema({
     enum: ['operator', 'engineer', 'admin'],
     default: 'operator'
   },
-  twoFactorSecret: {
-    type: String,
-    default: null
-  },
+  twoFactorSecret: String,
   twoFactorEnabled: {
     type: Boolean,
     default: false
   },
-  twoFactorTempSecret: {
-    type: String,
-    default: null
-  },
-  lastLogin: {
-    type: Date,
-    default: null
-  },
+  lockUntil: Date,
   loginAttempts: {
     type: Number,
     default: 0
-  },
-  lockUntil: {
-    type: Date,
-    default: null
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
-});
+}, { timestamps: true });
 
-// Hash password before saving
+// Hash password before saving to DB
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
 
-// Compare password
+// Verify password attempt
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Account lockout logic
+// Check if account is currently locked
 userSchema.virtual('isLocked').get(function () {
   return !!(this.lockUntil && this.lockUntil > Date.now());
 });
-
-userSchema.methods.incLoginAttempts = async function () {
-  if (this.lockUntil && this.lockUntil < Date.now()) {
-    return this.updateOne({ $set: { loginAttempts: 1 }, $unset: { lockUntil: 1 } });
-  }
-  const updates = { $inc: { loginAttempts: 1 } };
-  if (this.loginAttempts + 1 >= 5 && !this.isLocked) {
-    updates.$set = { lockUntil: Date.now() + 15 * 60 * 1000 }; // 15 min lock
-  }
-  return this.updateOne(updates);
-};
 
 module.exports = mongoose.model('User', userSchema);
