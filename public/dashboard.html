@@ -4,313 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard — MakerSpace Digital Twin</title>
+  
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #080c12; --surface: #0d1420; --surface2: #111827; --surface3: #0f1929;
-      --border: rgba(240,180,41,0.12); --accent: #F0B429; --accent2: #D4970A;
-      --accent-g: linear-gradient(135deg, #F0B429, #A8183F);
-      --text: #e2e8f0; --muted: #64748b; --success: #34d399; --warning: #fbbf24; --danger: #f87171;
-    }
-    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; overflow: hidden; }
-
-    /* ---- LAYOUT ---- */
-    .layout { display: grid; grid-template-rows: 52px 1fr; grid-template-columns: 220px 1fr; height: 100vh; }
-
-    /* Top nav */
-    .topnav {
-      grid-column: 1 / -1;
-      background: rgba(13,20,32,0.95); backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; padding: 0 20px; gap: 12px;
-      position: relative; z-index: 50;
-    }
-    .logo { display: flex; align-items: center; gap: 9px; }
-    .logo-icon { width: 28px; height: 28px; background: var(--accent-g); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
-    .logo-icon svg { width: 15px; height: 15px; fill: white; }
-    .logo-brand { font-size: 14px; font-weight: 700; }
-    .logo-brand span { color: var(--accent); }
-    .nav-divider { width: 1px; height: 24px; background: var(--border); margin: 0 8px; }
-    .nav-pill { font-size: 11px; font-weight: 500; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; letter-spacing: 0.04em; text-transform: uppercase; }
-    .nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-    .user-chip { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; transition: border-color 0.2s; }
-    .user-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--accent-g); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; }
-    .user-name { font-size: 12px; font-weight: 500; color: var(--muted); }
-    .logout-btn { background: none; border: 1px solid var(--border); border-radius: 7px; color: var(--muted); font-family: inherit; font-size: 12px; padding: 5px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
-    .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
-    .logout-btn svg { width: 13px; height: 13px; stroke: currentColor; }
-
-    /* Sidebar */
-    .sidebar {
-      background: var(--surface); border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; overflow-y: auto; padding: 16px 12px;
-    }
-    .sidebar-section { margin-bottom: 24px; }
-    .sidebar-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 8px; margin-bottom: 6px; }
-    .nav-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 9px 10px; border-radius: 8px;
-      font-size: 13px; color: var(--muted); cursor: pointer;
-      transition: all 0.15s; text-decoration: none; margin-bottom: 2px;
-    }
-    .nav-item:hover { background: rgba(240,180,41,0.07); color: var(--text); }
-    .nav-item.active { background: rgba(240,180,41,0.12); color: var(--accent); font-weight: 500; }
-    .nav-item svg { width: 16px; height: 16px; stroke: currentColor; flex-shrink: 0; }
-    .nav-item .badge-count { margin-left: auto; font-size: 10px; background: rgba(240,180,41,0.15); color: var(--accent); border-radius: 10px; padding: 1px 7px; font-family: 'JetBrains Mono', monospace; }
-    .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
-    .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; background: var(--surface2); }
-    .su-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent-g); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; }
-    .su-info { flex: 1; min-width: 0; }
-    .su-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .su-role { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-
-    /* Main content */
-    .main { overflow-y: auto; background: var(--bg); display: flex; flex-direction: column; }
-
-    /* Page sections */
-    .page-section { display: none; flex-direction: column; padding: 20px; gap: 16px; min-height: 0; flex: 1; }
-    .page-section.active { display: flex; }
-
-    /* Unity frame area */
-    .unity-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-    .section-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-    .section-title svg { width: 18px; height: 18px; stroke: var(--accent); }
-    .unity-actions { display: flex; gap: 8px; }
-    .btn-sm { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-family: inherit; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); }
-    .btn-sm svg { width: 14px; height: 14px; stroke: currentColor; }
-    .btn-sm.primary { background: var(--accent-g); border-color: transparent; color: white; }
-    .btn-sm.primary:hover { opacity: 0.85; }
-    .btn-sm.ghost { background: transparent; color: var(--muted); }
-    .btn-sm.ghost:hover { border-color: var(--accent); color: var(--accent); background: rgba(240,180,41,0.05); }
-
-    /* Unity iframe wrapper */
-    .unity-frame-wrap {
-      flex: 1;
-      min-height: 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .unity-frame-wrap iframe {
-      width: 100%; height: 100%;
-      border: none;
-      display: none;
-    }
-    .unity-frame-wrap iframe.loaded { display: block; }
-
-    /* Launch overlay */
-    .launch-overlay {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
-      background: radial-gradient(ellipse at center, rgba(13,20,32,0.95) 0%, rgba(8,12,18,0.98) 100%);
-    }
-    .launch-overlay.hidden { display: none; }
-    .launch-ring {
-      width: 100px; height: 100px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, rgba(240,180,41,0.1), rgba(168,24,63,0.1));
-      border: 1px solid rgba(240,180,41,0.3);
-      display: flex; align-items: center; justify-content: center;
-      position: relative;
-    }
-    .launch-ring::before {
-      content: ''; position: absolute; inset: -6px; border-radius: 50%;
-      border: 1px dashed rgba(240,180,41,0.2);
-      animation: rotateSlow 15s linear infinite;
-    }
-    @keyframes rotateSlow { to { transform: rotate(360deg); } }
-    .launch-ring svg { width: 44px; height: 44px; stroke: var(--accent); }
-    .launch-text h3 { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 6px; }
-    .launch-text p { font-size: 13px; color: var(--muted); text-align: center; max-width: 300px; }
-    .launch-btn {
-      padding: 12px 32px; background: var(--accent-g); border: none;
-      border-radius: 12px; color: white; font-family: inherit;
-      font-size: 14px; font-weight: 600; cursor: pointer;
-      display: flex; align-items: center; gap: 8px;
-      transition: opacity 0.2s, transform 0.15s;
-      box-shadow: 0 4px 24px rgba(240,180,41,0.2);
-    }
-    .launch-btn:hover { opacity: 0.9; transform: translateY(-2px); }
-    .launch-btn svg { width: 18px; height: 18px; stroke: white; }
-
-    /* Loading bar */
-    .loading-overlay {
-      position: absolute; inset: 0;
-      background: var(--surface);
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
-      display: none;
-    }
-    .loading-overlay.show { display: flex; }
-    .loading-bar-wrap { width: 280px; }
-    .loading-bar-label { font-size: 12px; color: var(--muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
-    .loading-bar-track { height: 4px; background: rgba(240,180,41,0.1); border-radius: 4px; overflow: hidden; }
-    .loading-bar-fill { height: 100%; background: var(--accent-g); border-radius: 4px; width: 0%; transition: width 0.3s ease; }
-    .loading-text { font-size: 13px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
-
-    /* Calculator Styles */
-    .calc-container { display: flex; gap: 20px; align-items: flex-start; }
-    .calc-menu { width: 300px; display: flex; flex-direction: column; gap: 10px; }
-    .calc-window { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: none; }
-    .calc-window.active { display: block; }
-    .calc-tool-btn { 
-      width: 100%; text-align: left; padding: 12px 16px; 
-      background: var(--surface); border: 1px solid var(--border); 
-      border-radius: 8px; color: var(--text); cursor: pointer; 
-      transition: all 0.2s; display: flex; align-items: center; justify-content: space-between;
-    }
-    .calc-tool-btn:hover { border-color: var(--accent); background: rgba(240,180,41,0.05); }
-    .calc-tool-btn.active { border-color: var(--accent); background: rgba(240,180,41,0.1); color: var(--accent); }
-    .calc-info-icon { 
-      width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--muted); 
-      display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--muted);
-      cursor: help; margin-left: 8px; flex-shrink: 0;
-    }
-    .calc-info-icon:hover { border-color: var(--accent); color: var(--accent); }
-    .calc-formula-box { 
-      background: var(--surface2); padding: 12px; border-radius: 8px; 
-      color: var(--accent); font-family: 'JetBrains Mono', monospace; 
-      margin-bottom: 20px; border-left: 3px solid var(--accent);
-    }
-    .calc-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-    .calc-group { display: flex; flex-direction: column; gap: 6px; }
-    .calc-group label { font-size: 12px; color: var(--muted); }
-    .calc-group input { 
-      background: var(--surface2); border: 1px solid var(--border); 
-      padding: 10px; border-radius: 6px; color: var(--text); outline: none;
-    }
-    .calc-group input:focus { border-color: var(--accent); }
-    .calc-result { 
-      padding: 20px; background: rgba(240,180,41,0.05); border-radius: 12px; 
-      text-align: center; border: 1px dashed var(--border);
-    }
-    .calc-result-val { font-size: 24px; font-weight: 700; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
-    .calc-help-text { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 16px; }
-
-    /* How To Use Styles */
-    .sub-nav { display: flex; gap: 24px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-    .sub-nav-item { 
-      padding: 12px 4px; font-size: 13px; font-weight: 500; color: var(--muted); 
-      cursor: pointer; position: relative; transition: color 0.2s;
-    }
-    .sub-nav-item:hover { color: var(--text); }
-    .sub-nav-item.active { color: var(--accent); }
-    .sub-nav-item.active::after { 
-      content: ''; position: absolute; bottom: -1px; left: 0; right: 0; 
-      height: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent);
-    }
-    .instruction-card { 
-      background: var(--surface); border: 1px solid var(--border); 
-      border-radius: 12px; padding: 24px; margin-bottom: 20px;
-    }
-    .control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-    .control-item { display: flex; align-items: flex-start; gap: 12px; }
-    .key-cap { 
-      background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; 
-      padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; 
-      color: var(--accent); box-shadow: 0 2px 0 var(--border); min-width: 32px; text-align: center;
-    }
-    .control-info h5 { font-size: 13px; margin-bottom: 4px; color: var(--text); }
-    .control-info p { font-size: 12px; color: var(--muted); }
-    .step-img { 
-      width: 100%; border-radius: 8px; border: 1px solid var(--border); 
-      margin-top: 16px; background: var(--surface2);
-    }
-    .how-to-content { display: none; }
-    .how-to-content.active { display: block; }
-
-    /* Preference Controls */
-    .pref-toggle { position: relative; display: inline-block; width: 36px; height: 18px; }
-    .pref-toggle input { opacity: 0; width: 0; height: 0; }
-    .pref-slider { 
-      position: absolute; cursor: pointer; inset: 0; background-color: var(--surface3); 
-      transition: .3s; border-radius: 20px; border: 1px solid var(--border);
-    }
-    .pref-slider:before { 
-      position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px; 
-      background-color: var(--muted); transition: .3s; border-radius: 50%;
-    }
-    .pref-toggle input:checked + .pref-slider { background-color: rgba(240,180,41,0.2); border-color: var(--accent); }
-    .pref-toggle input:checked + .pref-slider:before { transform: translateX(18px); background-color: var(--accent); }
-
-    .pref-select { 
-      background: var(--surface2); border: 1px solid var(--border); color: var(--text); 
-      font-size: 11px; padding: 4px 8px; border-radius: 6px; outline: none; cursor: pointer;
-    }
-    .pref-select:focus { border-color: var(--accent); }
-
-    .pref-range {
-      -webkit-appearance: none;
-      width: 100px;
-      height: 4px;
-      background: var(--surface3);
-      border-radius: 2px;
-      outline: none;
-    }
-    .pref-range::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 12px;
-      height: 12px;
-      background: var(--accent);
-      border-radius: 50%;
-      cursor: pointer;
-      transition: transform 0.1s;
-    }
-    .pref-range::-webkit-slider-thumb:hover { transform: scale(1.2); }
-
-    /* Theme Overrides */
-    body.theme-blue { --accent: #3b82f6; --accent2: #2563eb; --accent-g: linear-gradient(135deg, #3b82f6, #06b6d4); }
-    body.theme-green { --accent: #10b981; --accent2: #059669; --accent-g: linear-gradient(135deg, #10b981, #34d399); }
-    body.theme-crimson { --accent: #ef4444; --accent2: #dc2626; --accent-g: linear-gradient(135deg, #ef4444, #991b1b); }
-    
-    body.density-compact { font-size: 13px; }
-    body.density-compact .layout { grid-template-rows: 44px 1fr; grid-template-columns: 180px 1fr; }
-    body.density-compact .nav-item { padding: 6px 10px; font-size: 12px; }
-    body.density-compact .instruction-card { padding: 16px; }
-    
-    body.no-glow { --accent-g: var(--accent); }
-    body.no-glow * { box-shadow: none !important; text-shadow: none !important; filter: none !important; }
-
-    body.light-mode {
-      --bg: #f8fafc; --surface: #ffffff; --surface2: #f1f5f9; --surface3: #e2e8f0;
-      --border: rgba(0,0,0,0.08); --text: #1e293b; --muted: #64748b;
-    }
-    body.light-mode .instruction-card, body.light-mode .calc-window { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-
-    /* Notifications */
-    .notification {
-      width: 320px; background: var(--surface); border: 1px solid var(--border);
-      border-left: 4px solid var(--accent); border-radius: 8px; padding: 16px;
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); pointer-events: auto;
-      display: flex; gap: 12px; animation: slideIn 0.3s ease-out;
-      position: relative; overflow: hidden;
-    }
-    .notification.critical { border-left-color: #ef4444; }
-    .notification-content h6 { margin: 0 0 4px 0; font-size: 13px; color: var(--text); }
-    .notification-content p { margin: 0; font-size: 11px; color: var(--muted); line-height: 1.4; }
-    
-    @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes fadeOut {
-      from { opacity: 1; transform: scale(1); }
-      to { opacity: 0; transform: scale(0.95); }
-    }
-  </style>
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/dashboard.css" />
 </head>
 <body>
 
 <div class="layout">
+  <!-- Notifications Container -->
   <div id="notification-container" style="position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; pointer-events: none;"></div>
 
-  <!-- Top nav -->
+  <!-- Top Navigation -->
   <nav class="topnav">
     <div class="logo">
       <div class="logo-icon">
@@ -393,9 +101,10 @@
     </div>
   </aside>
 
-  <!-- Main -->
+  <!-- Main Content Area -->
   <main class="main">
-    <!-- Digital Twin Page -->
+    
+    <!-- Digital Twin Visualization -->
     <div id="digital-twin-page" class="page-section active">
       <div class="unity-header">
         <div class="section-title">
@@ -421,7 +130,7 @@
       </div>
 
       <div class="unity-frame-wrap" id="unityWrap">
-        <!-- Launch overlay — shows before user clicks launch -->
+        <!-- Launch overlay -->
         <div class="launch-overlay" id="launchOverlay">
           <div class="launch-ring">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -440,32 +149,12 @@
           </button>
         </div>
 
-        <!-- Loading bar -->
-        <div class="loading-overlay" id="loadingOverlay">
-          <div class="loading-bar-wrap">
-            <div class="loading-bar-label">
-              <span>Loading Unity WebGL…</span>
-              <span id="loadPct">0%</span>
-            </div>
-            <div class="loading-bar-track">
-              <div class="loading-bar-fill" id="loadFill"></div>
-            </div>
-          </div>
-          <div class="loading-text" id="loadingStatus">Initializing engine…</div>
-        </div>
-
-        <!-- Unity iframe (point this to your WebGL build) -->
-        <iframe
-          id="unityIframe"
-          src=""
-          allow="autoplay; fullscreen; cross-origin-isolated;"
-          title="MakerSpace Digital Twin"
-          onerror="console.error('Iframe failed to load (check COOP/COEP/CORP headers)')"
-        ></iframe>
+        <!-- Unity iframe -->
+        <iframe id="unityIframe" src="" allow="autoplay; fullscreen; cross-origin-isolated;" title="MakerSpace Digital Twin"></iframe>
       </div>
     </div>
 
-    <!-- Personnel Tracking Page -->
+    <!-- Personnel Tracking -->
     <div id="human-tracking-page" class="page-section">
        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
          <div style="display: flex; align-items: center; gap: 8px;">
@@ -481,1490 +170,175 @@
        
        <div class="instruction-card" style="margin-bottom: 16px;">
          <p style="color: var(--text); font-size: 13px; line-height: 1.6;">
-           Our advanced personnel tracking system utilizes overhead cameras paired with computer vision software to monitor personnel movement in real-time. The MakerSpace is divided into <strong>4 distinct zones</strong>.
+           Advanced personnel tracking utilizing overhead cameras and computer vision.
          </p>
          <p style="color: var(--muted); font-size: 12px; margin-top: 8px;">
-           <span style="color: var(--danger); font-weight: 600;">● NOTE:</span> Zone 4 is a <strong>restricted area</strong>. Any unauthorized entry will trigger an immediate system alert.
+           <span style="color: var(--danger); font-weight: 600;">● NOTE:</span> Zone 4 is a <strong>restricted area</strong>. Entry triggers an immediate alert.
          </p>
        </div>
 
        <div id="tracking-main-layout" style="flex: 1; display: flex; flex-direction: row; gap: 16px; min-height: 0;">
-         <!-- Left Column: Status Grid & Camera -->
          <div id="tracking-left-col" style="display: flex; flex-direction: column; gap: 16px; width: 140px; flex-shrink: 0; transition: width 0.3s ease;">
-           <!-- Zone Status Grid -->
+           <!-- Zone Grid -->
            <div id="zone-grid" style="display: flex; flex-direction: column; gap: 12px; flex: 1;">
              <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; background: rgba(240,180,41,0.03);">
-               <div style="font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 2px;">Zone 1</div>
+               <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Zone 1</div>
                <div style="font-size: 20px; font-weight: 700; color: var(--accent);">--</div>
-               <div class="personnel-label" style="font-size: 9px; color: var(--muted); margin-top: 2px;">Personnel</div>
+               <div class="personnel-label" style="font-size: 9px; color: var(--muted);">Personnel</div>
              </div>
              <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; background: rgba(240,180,41,0.03);">
-               <div style="font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 2px;">Zone 2</div>
+               <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Zone 2</div>
                <div style="font-size: 20px; font-weight: 700; color: var(--accent);">--</div>
-               <div class="personnel-label" style="font-size: 9px; color: var(--muted); margin-top: 2px;">Personnel</div>
+               <div class="personnel-label" style="font-size: 9px; color: var(--muted);">Personnel</div>
              </div>
              <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; background: rgba(240,180,41,0.03);">
-               <div style="font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 2px;">Zone 3</div>
+               <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Zone 3</div>
                <div style="font-size: 20px; font-weight: 700; color: var(--accent);">--</div>
-               <div class="personnel-label" style="font-size: 9px; color: var(--muted); margin-top: 2px;">Personnel</div>
+               <div class="personnel-label" style="font-size: 9px; color: var(--muted);">Personnel</div>
              </div>
              <div class="instruction-card" style="padding: 12px; margin-bottom: 0; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; border-color: rgba(248,113,113,0.2); background: rgba(248,113,113,0.03);">
-               <div style="font-size: 10px; color: var(--danger); text-transform: uppercase; margin-bottom: 2px;">Zone 4 (R)</div>
+               <div style="font-size: 10px; color: var(--danger); text-transform: uppercase;">Zone 4 (R)</div>
                <div style="font-size: 20px; font-weight: 700; color: var(--danger);">--</div>
-               <div class="personnel-label" style="font-size: 9px; color: var(--muted); margin-top: 2px;">Personnel</div>
+               <div class="personnel-label" style="font-size: 9px; color: var(--muted);">Personnel</div>
              </div>
            </div>
 
-           <!-- Camera Feed Container -->
+           <!-- Camera Feed -->
            <div id="camera-feed-container" style="display: none; flex-direction: column; gap: 8px; flex: 1.5; min-height: 0;">
              <div class="section-title" style="font-size: 11px; padding: 6px 10px; background: var(--surface2); border-radius: 6px; border: 1px solid var(--border);">
-               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px; stroke: var(--accent);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                Live Camera
                <button class="btn-sm ghost" style="margin-left: auto; padding: 2px 6px; font-size: 8px;" onclick="refreshStream()">REFRESH</button>
              </div>
-             <div style="flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
+             <div style="flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
                <img id="cvStream" src="" alt="Live Stream" style="width: 100%; height: 100%; object-fit: contain; display: none;">
-               <div id="stream-placeholder" style="display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--muted);">
-                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 32px; height: 32px; opacity: 0.3;"><path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"/></svg>
-                 <span style="font-size: 10px;">Offline</span>
-               </div>
+               <div id="stream-placeholder" style="color: var(--muted); font-size: 10px;">Offline</div>
              </div>
            </div>
          </div>
 
-         <!-- Right Column: Map Container -->
-         <div id="tracking-map-container" style="flex: 1; position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: flex 0.3s ease;">
-           <img src="/assets/makerspace_zones_with_key.png" alt="MakerSpace Zones Map" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+         <!-- Map View -->
+         <div id="tracking-map-container" style="flex: 1; position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+           <img src="/assets/makerspace_zones_with_key.png" alt="MakerSpace Map" style="max-width: 100%; max-height: 100%; object-fit: contain;">
            <canvas id="personnelCanvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
            
-           <!-- Service Error Overlay -->
-           <div id="live-service-error" style="display: none; position: absolute; inset: 0; background: rgba(8,12,18,0.8); backdrop-filter: blur(4px); flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 10;">
-             <div style="background: var(--surface); border: 1px solid var(--border); padding: 32px; border-radius: 16px; text-align: center; max-width: 300px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
-               <div style="width: 48px; height: 48px; background: rgba(248,113,113,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                 <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" style="width: 24px; height: 24px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-               </div>
-               <h4 style="margin-bottom: 8px;">Service Unavailable</h4>
-               <p style="font-size: 13px; color: var(--muted); margin-bottom: 24px;">The live tracking service is not currently running. Check your connection or try again.</p>
-               <button class="btn-sm primary" style="width: 100%; justify-content: center;" onclick="fetchLiveTrackingData()">Retry Connection</button>
+           <!-- Error Overlay -->
+           <div id="live-service-error" style="display: none; position: absolute; inset: 0; background: rgba(8,12,18,0.8); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 10;">
+             <div style="background: var(--surface); border: 1px solid var(--border); padding: 32px; border-radius: 16px; text-align: center;">
+               <h4>Service Unavailable</h4>
+               <p style="font-size: 13px; color: var(--muted); margin-bottom: 24px;">Connection to live tracking failed.</p>
+               <button class="btn-sm primary" onclick="fetchLiveTrackingData()">Retry</button>
              </div>
            </div>
          </div>
        </div>
     </div>
 
-    <!-- AI Assistant Page -->
+    <!-- AI Assistant -->
     <div id="ai-assistant-page" class="page-section">
-       <div class="section-title">
-         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="stroke: var(--accent);">
-           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-         </svg>
-         MakerSpace AI Assistant
-       </div>
-
-       <div class="instruction-card" style="flex: 1; display: flex; flex-direction: column; min-height: 0; background: rgba(13, 20, 32, 0.5); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
-         <div id="ai-chat-history" class="font-mono" style="flex: 1; overflow-y: auto; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; background: rgba(8, 12, 18, 0.4); font-size: 13px; line-height: 1.6; display: flex; flex-direction: column; gap: 12px;">
-           <div style="color: var(--muted); padding: 20px; max-width: 600px; margin: auto;">
-             <div style="text-align: center; margin-bottom: 24px; opacity: 0.6;">
-               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="width: 48px; height: 48px; margin: 0 auto 12px; display: block;">
-                 <path d="M12 8V4m0 0L8 8m4-4l4 4m-4 12v-4m0 0l4-4m-4 4l-4-4"/>
-               </svg>
-               <h4 style="color: var(--text); margin-bottom: 4px;">MakerSpace AI Assistant</h4>
-               <p style="font-size: 12px;">Ready to help with live telemetry, safety rules, and inventory.</p>
-             </div>
-
-             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-               <div>
-                 <h6 style="color: var(--accent); font-size: 10px; text-transform: uppercase; margin-bottom: 8px;">Live Operations</h6>
-                 <ul style="list-style: none; padding: 0; font-size: 11px; display: flex; flex-direction: column; gap: 6px;">
-                   <li>• Is A1-P1S running right now?</li>
-                   <li>• Why did task 1774131148533 fail?</li>
-                   <li>• What is happening in the makerspace?</li>
-                 </ul>
-               </div>
-               <div>
-                 <h6 style="color: var(--accent); font-size: 10px; text-transform: uppercase; margin-bottom: 8px;">Safety & Manuals</h6>
-                 <ul style="list-style: none; padding: 0; font-size: 11px; display: flex; flex-direction: column; gap: 6px;">
-                   <li>• What are the safety rules?</li>
-                   <li>• What does the PCNC 440 manual say?</li>
-                   <li>• What is PETG good for?</li>
-                 </ul>
-               </div>
-             </div>
-             
-             <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); text-align: center;">
-               <p style="font-size: 11px; opacity: 0.7;">Check the <strong>How To Use</strong> tab for a full list of all supported queries.</p>
-             </div>
-           </div>
+       <div class="section-title">MakerSpace AI Assistant</div>
+       <div class="instruction-card" style="flex: 1; display: flex; flex-direction: column; min-height: 0; background: rgba(13, 20, 32, 0.5);">
+         <div id="ai-chat-history" class="font-mono" style="flex: 1; overflow-y: auto; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
+           <div style="color: var(--muted); text-align: center; margin: auto; opacity: 0.5;">Awaiting Command...</div>
          </div>
-         
          <div style="display: flex; gap: 12px; background: var(--surface2); padding: 8px; border-radius: 10px; border: 1px solid var(--border);">
-           <input type="text" id="ai-chat-input" placeholder="Type your message..." style="flex: 1; background: transparent; border: none; padding: 8px 12px; color: var(--text); outline: none; font-family: inherit;">
-           <button id="ai-send-btn" class="btn-sm primary" style="padding: 8px 24px; border-radius: 6px; font-weight: 600; letter-spacing: 0.05em;">
-             SEND
-           </button>
+           <input type="text" id="ai-chat-input" placeholder="Ask about safety protocols..." style="flex: 1; background: transparent; border: none; padding: 8px 12px; color: var(--text); outline: none;">
+           <button id="ai-send-btn" class="btn-sm primary">SEND</button>
          </div>
        </div>
     </div>
 
-    <!-- How To Use Page -->
+    <!-- User Documentation -->
     <div id="how-to-use-page" class="page-section">
        <div class="section-title">User Documentation</div>
-       
        <div class="sub-nav">
          <div class="sub-nav-item active" data-tab="controls" onclick="showHowTo('controls')">Controls</div>
          <div class="sub-nav-item" data-tab="convai" onclick="showHowTo('convai')">Using Convai</div>
-         <div class="sub-nav-item" data-tab="object-tracking-docs" onclick="showHowTo('object-tracking-docs')">Object Tracking</div>
-         <div class="sub-nav-item" data-tab="human-tracking-docs" onclick="showHowTo('human-tracking-docs')">Personnel Tracking</div>
-         <div class="sub-nav-item" data-tab="ai-assistant-docs" onclick="showHowTo('ai-assistant-docs')">AI Assistant</div>
+         <div class="sub-nav-item" data-tab="object-tracking-docs" onclick="showHowTo('object-tracking-docs')">Inventory</div>
+         <div class="sub-nav-item" data-tab="human-tracking-docs" onclick="showHowTo('human-tracking-docs')">Personnel</div>
        </div>
 
-       <!-- Controls Content -->
        <div id="controls-content" class="how-to-content active">
          <div class="instruction-card">
-           <h4 style="margin-bottom: 20px; color: var(--accent);">Digital Twin Controls</h4>
+           <h4 style="margin-bottom: 20px; color: var(--accent);">Floor Controls</h4>
            <div class="control-grid">
-             <div class="control-item">
-               <div class="key-cap">WASD</div>
-               <div class="control-info">
-                 <h5>Movement</h5>
-                 <p>Use WASD or arrow keys to navigate the floor.</p>
-               </div>
-             </div>
-             <div class="control-item">
-               <div class="key-cap">RMB</div>
-               <div class="control-info">
-                 <h5>Look Around</h5>
-                 <p>Hold Right Mouse Button and move mouse to rotate view.</p>
-               </div>
-             </div>
-             <div class="control-item">
-               <div class="key-cap">LMB</div>
-               <div class="control-info">
-                 <h5>Select</h5>
-                 <p>Left Click on machines to view real-time data and details.</p>
-               </div>
-             </div>
-             <div class="control-item">
-               <div class="key-cap">T</div>
-               <div class="control-info">
-                 <h5>Voice Chat</h5>
-                 <p>Hold T to speak with the Convai AI Assistant.</p>
-               </div>
-             </div>
-             <div class="control-item">
-               <div class="key-cap">↵</div>
-               <div class="control-info">
-                 <h5>Text Chat</h5>
-                 <p>Press Enter to type messages to the Convai AI.</p>
-               </div>
-             </div>
-           </div>
-         </div>
-
-         <div class="instruction-card">
-           <h4 style="margin-bottom: 12px; color: var(--accent);">Viewing Machine Data</h4>
-           <p style="font-size: 13px; color: var(--text);">To view the machine info dashboard, simply <strong>Left Click</strong> on any machine in the 3D view. This will instantly pull up the dashboard containing the live data stream for that specific unit.</p>
-           <div class="step-img">
-             <img src="/assets/gif1.gif" alt="Machine Info Demo" style="width: 100%; border-radius: 7px;">
-           </div>
-         </div>
-       </div>
-
-       <!-- Convai Content -->
-       <div id="convai-content" class="how-to-content">
-         <div class="instruction-card">
-           <h4 style="margin-bottom: 12px; color: var(--accent);">Using Convai AI</h4>
-           <p style="color: var(--text); font-size: 13px; margin-bottom: 16px;">
-             The MakerSpace Digital Twin features an advanced AI Assistant powered by Convai. You can interact with the environment and get information through natural language.
-           </p>
-           
-           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
-             <div class="control-item">
-               <div class="key-cap">T</div>
-               <div class="control-info">
-                 <h5>Voice Interaction</h5>
-                 <p>Hold T to speak. Release to send your voice command.</p>
-               </div>
-             </div>
-             <div class="control-item">
-               <div class="key-cap">↵</div>
-               <div class="control-info">
-                 <h5>Text Interaction</h5>
-                 <p>Press Enter to open the chat box, type your prompt, and press Enter again.</p>
-               </div>
-             </div>
-           </div>
-
-           <div class="step-img">
-             <img src="/assets/ConvaiExamplePhoto.png" alt="Convai AI Interaction" style="width: 100%; border-radius: 7px;">
-           </div>
-         </div>
-
-         <div class="instruction-card">
-           <h4 style="margin-bottom: 16px; color: var(--accent);">Example Prompts</h4>
-           <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px;">
-             <li style="background: var(--surface2); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">"Tell me about the MakerSpace"</li>
-             <li style="background: var(--surface2); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">"What model printers are found in the MakerSpace"</li>
-             <li style="background: var(--surface2); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">"How many printers are in the makerspace?"</li>
-             <li style="background: var(--surface2); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">"How do I start a print in the MakerSpace?"</li>
-           </ul>
-         </div>
-
-         <div class="instruction-card">
-           <h4 style="margin-bottom: 16px; color: var(--accent);">AI Actions</h4>
-           <p style="color: var(--muted); font-size: 13px; margin-bottom: 8px;">The AI assistant can perform physical actions within the digital twin environment:</p>
-           
-           <div style="background: rgba(240,180,41,0.1); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 4px; margin-bottom: 20px;">
-             <p style="font-size: 12px; color: var(--text); margin: 0;"><strong>Note:</strong> Machines are referred to for actions by their <strong>station number</strong> (e.g., A4 or B5). This resolves the confusion between a station location (A1) and a machine model (Bambu A1).</p>
-           </div>
-           
-           <div style="display: flex; flex-direction: column; gap: 16px;">
-             <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
-               <h5 style="color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-                 <span style="color: var(--accent);">●</span> "Show me..."
-               </h5>
-               <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">The AI will walk to the specified machine and highlight it for you.</p>
-               <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); background: rgba(240,180,41,0.05); padding: 8px; border-radius: 6px;">
-                 Prompt: "Show me printer B3"
-               </div>
-             </div>
-
-             <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
-               <h5 style="color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-                 <span style="color: var(--accent);">●</span> "Display Dashboard..."
-               </h5>
-               <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Opens the detailed data view for the specified machine.</p>
-               <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); background: rgba(240,180,41,0.05); padding: 8px; border-radius: 6px;">
-                 Prompt: "Display dashboard for printer at station D9"
-               </div>
-             </div>
-
-             <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
-               <h5 style="color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-                 <span style="color: var(--accent);">●</span> "Highlight..."
-               </h5>
-               <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Highlights the specified machine to find easily in the digital twin.</p>
-               <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); background: rgba(240,180,41,0.05); padding: 8px; border-radius: 6px;">
-                 Prompt: "Highlight printer A2"
-               </div>
-             </div>
-
-             <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
-               <h5 style="color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-                 <span style="color: var(--accent);">●</span> "Move to..."
-               </h5>
-               <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">The NPC will move to the specified machine.</p>
-               <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); background: rgba(240,180,41,0.05); padding: 8px; border-radius: 6px;">
-                 Prompt: "Move to printer C6"
-               </div>
-             </div>
-           </div>
-         </div>
-       </div>
-
-       <!-- Personnel Tracking Content -->
-       <div id="human-tracking-docs-content" class="how-to-content">
-         <div class="instruction-card">
-           <h4 style="margin-bottom: 12px; color: var(--accent);">Using Personnel Tracking</h4>
-           <p style="color: var(--text); font-size: 13px; margin-bottom: 16px;">
-             Our personnel tracking system uses computer vision to monitor movement within the MakerSpace, ensuring safety and security in real-time.
-           </p>
-           
-           <div class="step-img" style="margin-bottom: 20px;">
-             <img src="/assets/gif2.gif" alt="Personnel Tracking Demo" style="width: 100%; border-radius: 7px; border: 1px solid var(--border);">
-           </div>
-
-           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
-             <div class="control-item">
-               <div class="key-cap" style="background: var(--accent); color: white;">●</div>
-               <div class="control-info">
-                 <h5>Person Markers</h5>
-                 <p>Each dot on the map represents a person detected by the system.</p>
-               </div>
-             </div>
-             <div class="control-item">
-               <div class="key-cap" style="background: #ff4d4d; color: white;">!</div>
-               <div class="control-info">
-                 <h5>Zone Alerts</h5>
-                 <p>Receive an instant alert when a person enters a restricted zone.</p>
-               </div>
-             </div>
-           </div>
-
-           <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px;">
-             <h5 style="color: var(--text); margin-bottom: 8px;">Alert Preferences</h5>
-             <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Customize how you receive alerts, including sound tones and visual notifications.</p>
-             <button class="btn-sm" style="background: var(--accent); color: var(--bg); border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600;" onclick="document.querySelector('[data-page=\'preferences\']').click()">Configure Alerts</button>
-           </div>
-
-           <div style="display: flex; flex-direction: column; gap: 16px;">
-             <h5 style="color: var(--text); margin-bottom: 4px;">Monitoring Modes</h5>
-             
-             <div style="background: var(--surface2); padding: 14px; border-radius: 8px; border-left: 3px solid var(--accent);">
-               <div style="font-weight: 600; font-size: 13px; color: var(--text);">Live Mode</div>
-               <p style="font-size: 12px; color: var(--muted);">Real-time monitoring using a camera feed with defined safety zones.</p>
-             </div>
-
-             <div style="background: var(--surface2); padding: 14px; border-radius: 8px; border-left: 3px solid var(--accent);">
-               <div style="font-weight: 600; font-size: 13px; color: var(--text);">Simulation Mode</div>
-               <p style="font-size: 12px; color: var(--muted);">Demonstration mode using synthetic data to show high-activity scenarios with multiple people moving through the space.</p>
-             </div>
-           </div>
-         </div>
-       </div>
-
-       <!-- Object Tracking Content -->
-       <div id="object-tracking-docs-content" class="how-to-content">
-         <div class="instruction-card">
-           <h4 style="margin-bottom: 12px; color: var(--accent);">Using Object Tracking</h4>
-           <p style="color: var(--text); font-size: 13px; margin-bottom: 16px;">
-             Object tracking in the MakerSpace is visualized directly within the Digital Twin. The environment is split into <strong>two distinct zones</strong> to monitor and manage inventory placement effectively.
-           </p>
-
-           <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
-             <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
-               <h5 style="color: var(--text); margin-bottom: 8px;">Automated Inventory Placement</h5>
-               <p style="font-size: 12px; color: var(--muted);">When a camera identifies inventory (such as filament) entering a zone, the Digital Twin automatically updates to show that item on the central inventory table.</p>
-             </div>
-
-             <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
-               <h5 style="color: var(--text); margin-bottom: 8px;">Dynamic NPC Interaction</h5>
-               <p style="font-size: 12px; color: var(--muted);">The central table is split into two halves, each representing a tracking zone. When inventory is moved from one zone to another, the AI NPC will physically pick up the item and move it to the correct side of the table in real-time.</p>
-             </div>
-           </div>
-
-           <div class="step-img" style="margin-bottom: 20px;">
-             <img src="/assets/gif3.gif" alt="Object Tracking Demo" style="width: 100%; border-radius: 7px; border: 1px solid var(--border);">
-           </div>
-         </div>
-       </div>
-
-       <!-- AI Assistant Content -->
-       <div id="ai-assistant-docs-content" class="how-to-content">
-         <div class="instruction-card">
-           <h4 style="margin-bottom: 12px; color: var(--accent);">Digital Twin AI Assistant</h4>
-           <p style="color: var(--text); font-size: 13px; margin-bottom: 16px;">
-             The dedicated AI Assistant tab allows for deep conversation with the MakerSpace Digital Twin. It provides a full-page chat experience with detailed source data visibility.
-           </p>
-         </div>
-         
-         <div class="instruction-card">
-           <h4 style="margin-bottom: 20px; color: var(--accent);">All questions you can ask right now</h4>
-           
-           <div style="display: flex; flex-direction: column; gap: 24px;">
-             <!-- Agent 1 -->
-             <div>
-               <h5 style="color: var(--text); margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                 <span style="background: var(--accent); color: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;">1</span>
-                 ExplanationAgent
-               </h5>
-               <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Live printer, task, and system state monitoring.</p>
-               
-               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
-                 <div>
-                   <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Task Queries</h6>
-                   <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Why did task 1774131148533 fail?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Explain task 1774131586651.</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Explain task PT-B1-P1S-19D127BA65B.</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What happened to task 1774131586651?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What is the status of task PT-B1-P1S-19D127BA65B?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Which printer was task 1774131148533 on?</li>
-                   </ul>
-                 </div>
-                 <div>
-                   <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Printer Queries</h6>
-                   <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What happened to A1-P1S?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Is A1-P1S running right now?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Is printer 01P00A3B2300627 running?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What is the status of A1-P1S?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Explain printer 01P00A3B2300627.</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What is the latest issue on A1-P1S?</li>
-                   </ul>
-                 </div>
-               </div>
-               <div style="margin-top: 16px;">
-                 <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Live Operations</h6>
-                 <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 6px;">
-                   <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What is happening in the makerspace right now?</li>
-                   <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">How many printers are running right now?</li>
-                   <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Is the scheduler active right now?</li>
-                   <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">How many jobs are queued right now?</li>
-                 </ul>
-               </div>
-             </div>
-
-             <!-- Agent 2 -->
-             <div>
-               <h5 style="color: var(--text); margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                 <span style="background: var(--accent); color: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;">2</span>
-                 StaticKnowledgeAgent
-               </h5>
-               <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Manuals, safety protocols, troubleshooting, and material guidance.</p>
-               
-               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
-                 <div>
-                   <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Safety & Rules</h6>
-                   <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What are the 3D printer safety rules?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What hazards should I know before using a printer?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Is it safe to leave a printer unattended?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What PPE should I use in the makerspace?</li>
-                   </ul>
-                 </div>
-                 <div>
-                   <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Troubleshooting</h6>
-                   <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">How do I troubleshoot 3D printing errors?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Why does my print have stringing?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">How do I fix warping or poor bed adhesion?</li>
-                   </ul>
-                 </div>
-               </div>
-               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 16px;">
-                 <div>
-                   <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Materials</h6>
-                   <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What material should I use for strong parts?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What is the difference between PLA and PETG?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What material is best for heat resistance?</li>
-                   </ul>
-                 </div>
-                 <div>
-                   <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Manuals & Room Info</h6>
-                   <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What does the PCNC 440 manual say?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Tell me about the makerspace room.</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">How is DMAIC used for process improvement?</li>
-                   </ul>
-                 </div>
-               </div>
-             </div>
-
-             <!-- Agent 3 -->
-             <div>
-               <h5 style="color: var(--text); margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                 <span style="background: var(--accent); color: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;">3</span>
-                 InventoryAgent
-               </h5>
-               <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Detected spools, zone summaries, and camera vision data.</p>
-               
-               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
-                 <div>
-                   <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Inventory & Spools</h6>
-                   <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What spools do we have right now?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What filament is available right now?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Do we have red PETG?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Show me all red spools.</li>
-                   </ul>
-                 </div>
-                 <div>
-                   <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Zones & Camera</h6>
-                   <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What is in Zone_Left or Zone_Right?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Which zone has the blue spool?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What does the inventory camera see?</li>
-                     <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Give me the inventory zone summary.</li>
-                   </ul>
-                 </div>
-               </div>
-             </div>
+             <div class="control-item"><div class="key-cap">WASD</div><div class="control-info"><h5>Movement</h5><p>Navigate the floor.</p></div></div>
+             <div class="control-item"><div class="key-cap">RMB</div><div class="control-info"><h5>Look</h5><p>Rotate view.</p></div></div>
+             <div class="control-item"><div class="key-cap">LMB</div><div class="control-info"><h5>Select</h5><p>Inspect machines.</p></div></div>
            </div>
          </div>
        </div>
     </div>
 
-    <!-- Calculators Page -->
+    <!-- Inventory Calculators -->
     <div id="calculators-page" class="page-section">
        <div class="section-title">Inventory Management</div>
-       
        <div class="calc-container">
          <div class="calc-menu">
-           <button class="calc-tool-btn active" onclick="showCalc('eoq')">
-             EOQ - Economic Order Quantity
-             <span class="calc-info-icon" title="Determines the best number of units to order each time to keep total costs as low as possible.">?</span>
-           </button>
-           <button class="calc-tool-btn" onclick="showCalc('avg')">
-             Average Inventory
-             <span class="calc-info-icon" title="Represents the typical amount of inventory you have on hand over time.">?</span>
-           </button>
-           <button class="calc-tool-btn" onclick="showCalc('rop')">
-             Reorder Point (ROP)
-             <span class="calc-info-icon" title="Shows the inventory level at which you should place a new order to avoid running out.">?</span>
-           </button>
-           <button class="calc-tool-btn" onclick="showCalc('tic')">
-             Total Inventory Cost
-             <span class="calc-info-icon" title="Calculates the total cost of managing inventory, including ordering and holding costs.">?</span>
-           </button>
-           <button class="calc-tool-btn" onclick="showCalc('cogs')">
-             Cost of Goods Sold (COGS)
-             <span class="calc-info-icon" title="Represents the total cost of producing or purchasing the items that were sold.">?</span>
-           </button>
-           <button class="calc-tool-btn" onclick="showCalc('turn')">
-             Inventory Turnover
-             <span class="calc-info-icon" title="Measures how many times inventory is sold or used over a period.">?</span>
-           </button>
+           <button class="calc-tool-btn active" onclick="showCalc('eoq')">EOQ - Order Quantity</button>
+           <button class="calc-tool-btn" onclick="showCalc('avg')">Average Inventory</button>
+           <button class="calc-tool-btn" onclick="showCalc('rop')">Reorder Point</button>
+           <button class="calc-tool-btn" onclick="showCalc('tic')">Total Cost</button>
          </div>
-
          <div id="calc-display" class="calc-window active">
             <h4 id="calc-title" style="margin-bottom: 8px; color: var(--accent);">EOQ Calculator</h4>
-            <p id="calc-desc" class="calc-help-text">Determines the best number of units to order each time to keep total costs as low as possible. It balances the cost of ordering with the cost of storing inventory.</p>
-            
-            <div id="calc-formula" class="calc-formula-box">EOQ = √((2 * D * S) / H)</div>
-
-            <div id="calc-inputs" class="calc-inputs">
-              <!-- Dynamic inputs here -->
-            </div>
-
+            <p id="calc-desc" class="calc-help-text"></p>
+            <div id="calc-formula" class="calc-formula-box"></div>
+            <div id="calc-inputs" class="calc-inputs"></div>
             <div class="calc-result">
-               <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px;">CALCULATED RESULT</div>
+               <div style="font-size: 12px; color: var(--muted);">CALCULATED RESULT</div>
                <div id="final-result" class="calc-result-val">---</div>
             </div>
          </div>
        </div>
     </div>
 
-    <!-- Preferences Page -->
+    <!-- System Preferences -->
     <div id="preferences-page" class="page-section">
        <div class="section-title">Preferences</div>
-
        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-         <!-- Appearance Section -->
          <div class="instruction-card">
-           <h4 style="margin-bottom: 20px; color: var(--accent); display: flex; align-items: center; gap: 8px;">
-             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
-             Appearance
-           </h4>
-
+           <h4 style="margin-bottom: 20px; color: var(--accent);">Appearance</h4>
            <div style="display: flex; flex-direction: column; gap: 16px;">
-             <div style="display: flex; align-items: center; justify-content: space-between;">
-               <div>
-                 <div style="font-weight: 500; font-size: 13px;">Dark Mode</div>
-                 <div style="font-size: 11px; color: var(--muted);">Switch between dark and light themes</div>
-               </div>
-               <label class="pref-toggle">
-                 <input type="checkbox" id="pref-dark-mode" checked onchange="savePrefs()">
-                 <span class="pref-slider"></span>
-               </label>
+             <div style="display: flex; justify-content: space-between;">
+               <span>Dark Mode</span>
+               <label class="pref-toggle"><input type="checkbox" id="pref-dark-mode" onchange="savePrefs()"><span class="pref-slider"></span></label>
              </div>
-
-             <div style="display: flex; align-items: center; justify-content: space-between;">
-               <div>
-                 <div style="font-weight: 500; font-size: 13px;">Accent Color</div>
-                 <div style="font-size: 11px; color: var(--muted);">Primary theme color</div>
-               </div>
+             <div style="display: flex; justify-content: space-between;">
+               <span>Accent</span>
                <select class="pref-select" id="pref-accent-color" onchange="savePrefs()">
-                 <option value="gold">Maker Gold</option>
-                 <option value="blue">Cyber Blue</option>
-                 <option value="green">Emerald Green</option>
-                 <option value="crimson">Crimson Red</option>
+                 <option value="gold">Gold</option><option value="blue">Blue</option><option value="green">Green</option>
                </select>
-             </div>
-
-             <div style="display: flex; align-items: center; justify-content: space-between;">
-               <div>
-                 <div style="font-weight: 500; font-size: 13px;">UI Density</div>
-                 <div style="font-size: 11px; color: var(--muted);">Adjust spacing and size</div>
-               </div>
-               <select class="pref-select" id="pref-ui-density" onchange="savePrefs()">
-                 <option value="comfortable">Comfortable</option>
-                 <option value="compact">Compact</option>
-               </select>
-             </div>
-
-             <div style="display: flex; align-items: center; justify-content: space-between;">
-               <div>
-                 <div style="font-weight: 500; font-size: 13px;">Glow Effects</div>
-                 <div style="font-size: 11px; color: var(--muted);">Enable neon glow aesthetics</div>
-               </div>
-               <label class="pref-toggle">
-                 <input type="checkbox" id="pref-glow" checked onchange="savePrefs()">
-                 <span class="pref-slider"></span>
-               </label>
              </div>
            </div>
          </div>
-
-         <!-- Notifications Section -->
          <div class="instruction-card">
-           <h4 style="margin-bottom: 20px; color: var(--accent); display: flex; align-items: center; gap: 8px;">
-             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-             Alerts & Notifications
-           </h4>
-
+           <h4 style="margin-bottom: 20px; color: var(--accent);">Alerts</h4>
            <div style="display: flex; flex-direction: column; gap: 16px;">
-             <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(239, 68, 68, 0.05); padding: 8px; border-radius: 8px; margin-bottom: 8px;">
-               <div>
-                 <div style="font-weight: 600; font-size: 13px; color: #ef4444;">Stop All Alerts</div>
-                 <div style="font-size: 11px; color: var(--muted);">Immediately silence and disable all notifications</div>
-               </div>
-               <label class="pref-toggle">
-                 <input type="checkbox" id="pref-stop-alerts" onchange="savePrefs()">
-                 <span class="pref-slider" style="background-color: #ef4444;"></span>
-               </label>
-             </div>
-
-             <div style="display: flex; align-items: center; justify-content: space-between;">
-               <div>
-                 <div style="font-weight: 500; font-size: 13px;">Notification Tone</div>
-                 <div style="font-size: 11px; color: var(--muted);">Sound played for new alerts</div>
-               </div>
-               <div style="display: flex; gap: 8px; align-items: center;">
-                 <select class="pref-select" id="pref-tone" onchange="savePrefs()">
-                   <option value="subtle">Subtle Chime</option>
-                   <option value="industrial">Industrial Beep</option>
-                   <option value="pulse">Tech Pulse</option>
-                   <option value="mute">Mute</option>
-                 </select>
-                 <button class="btn-sm ghost" style="padding: 4px 8px; font-size: 10px;" onclick="testTone()">TEST</button>
-               </div>
-             </div>
-
-             <div style="display: flex; align-items: center; justify-content: space-between;">
-               <div>
-                 <div style="font-weight: 500; font-size: 13px;">Notification Volume</div>
-                 <div style="font-size: 11px; color: var(--muted);">Adjust the alert loudness</div>
-               </div>
-               <div style="display: flex; gap: 12px; align-items: center;">
-                 <input type="range" id="pref-volume" min="0" max="100" value="70" class="pref-range" onchange="savePrefs()">
-                 <button class="btn-sm ghost" style="padding: 4px 8px; font-size: 10px;" onclick="testTone()">TEST</button>
-               </div>
-             </div>
-
-             <div style="display: flex; align-items: center; justify-content: space-between;">
-               <div>
-                 <div style="font-weight: 500; font-size: 13px;">Auto-Dismiss</div>
-                 <div style="font-size: 11px; color: var(--muted);">How long alerts stay on screen</div>
-               </div>
-               <select class="pref-select" id="pref-dismiss" onchange="savePrefs()">
-                 <option value="3">3 Seconds</option>
-                 <option value="5">5 Seconds</option>
-                 <option value="10">10 Seconds</option>
-                 <option value="manual">Manual Only</option>
+             <div style="display: flex; justify-content: space-between;">
+               <span>Tone</span>
+               <select class="pref-select" id="pref-tone" onchange="savePrefs()">
+                 <option value="subtle">Subtle</option><option value="industrial">Industrial</option><option value="mute">Mute</option>
                </select>
              </div>
-
-             <div style="display: flex; align-items: center; justify-content: space-between;">
-               <div>
-                 <div style="font-weight: 500; font-size: 13px;">Priority Filtering</div>
-                 <div style="font-size: 11px; color: var(--muted);">Only show critical system alerts</div>
-               </div>
-               <label class="pref-toggle">
-                 <input type="checkbox" id="pref-critical-only" onchange="savePrefs()">
-                 <span class="pref-slider"></span>
-               </label>
+             <div style="display: flex; justify-content: space-between;">
+               <span>Volume</span>
+               <input type="range" id="pref-volume" min="0" max="100" class="pref-range" onchange="savePrefs()">
              </div>
            </div>
          </div>
        </div>
-    </div>  </main>
+    </div>
+  </main>
 </div>
 
-<script>
-  // Auth check
-  const token = localStorage.getItem('authToken');
-  if (!token) window.location.href = '/login';
-
-  // Load user info
-  async function loadUser() {
-    try {
-      const res = await fetch('/api/auth/me', {
-        headers: { 'Authorization': `Bearer ${token}` },
-        credentials: 'include'
-      });
-      if (!res.ok) { localStorage.removeItem('authToken'); window.location.href = '/login'; return; }
-      const { user } = await res.json();
-      document.getElementById('navUsername').textContent = user.username;
-      } catch {}  }
-  loadUser();
-
-  // Page switching
-  const navItems = document.querySelectorAll('.nav-item');
-  const pageSections = document.querySelectorAll('.page-section');
-  const activePagePill = document.getElementById('activePagePill');
-
-  navItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-      const page = item.getAttribute('data-page');
-      if (!page) return;
-      e.preventDefault();
-
-      // Update nav items
-      navItems.forEach(nav => nav.classList.remove('active'));
-      item.classList.add('active');
-
-      // Update sections
-      pageSections.forEach(section => section.classList.remove('active'));
-      const targetPage = document.getElementById(`${page}-page`);
-      if (targetPage) targetPage.classList.add('active');
-
-      // Update top pill
-      activePagePill.textContent = item.textContent.trim();
-    });
-  });
-
-  // Logout
-  document.getElementById('logoutBtn').addEventListener('click', async () => {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
-    localStorage.removeItem('authToken');
-    window.location.href = '/login';
-  });
-
-  // Unity launch
-  const launchOverlay  = document.getElementById('launchOverlay');
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  const unityIframe    = document.getElementById('unityIframe');
-  const loadFill       = document.getElementById('loadFill');
-  const loadPct        = document.getElementById('loadPct');
-  const loadingStatus  = document.getElementById('loadingStatus');
-
-  const UNITY_BUILD_URL = '/unity/index.html'; // ← Change to your WebGL build path
-
-  // Launch Unity
-  document.getElementById('launchBtn').addEventListener('click', () => {
-    launchOverlay.classList.add('hidden');
-    // Launch Unity immediately
-    unityIframe.src = UNITY_BUILD_URL + '?t=' + Date.now();
-    unityIframe.classList.add('loaded');
-  });
-
-  // Fullscreen
-  document.getElementById('fullscreenBtn').addEventListener('click', () => {
-    const wrap = document.getElementById('unityWrap');
-    if (wrap.requestFullscreen) wrap.requestFullscreen();
-    else if (wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
-  });
-
-  // Reload Unity
-  document.getElementById('reloadBtn').addEventListener('click', () => {
-    unityIframe.classList.remove('loaded');
-    unityIframe.src = '';
-    launchOverlay.classList.remove('hidden');
-  });
-
-  // --- Calculator Logic ---
-  const calcData = {
-    eoq: {
-      title: "EOQ Calculator",
-      desc: "Determines the best number of units to order each time to keep total costs as low as possible. It balances the cost of ordering with the cost of storing inventory.",
-      formula: "EOQ = √((2 * D * S) / H)",
-      inputs: [
-        { label: "Annual Demand (D)", id: "in-d", oninput: "runCalc('eoq')" },
-        { label: "Ordering Cost (S)", id: "in-s", oninput: "runCalc('eoq')" },
-        { label: "Holding Cost (H)", id: "in-h", oninput: "runCalc('eoq')" }
-      ]
-    },
-    avg: {
-      title: "Average Inventory",
-      desc: "Represents the typical amount of inventory you have on hand over time. It is used to estimate storage needs and calculate inventory costs.",
-      formula: "Avg = (Beginning + Ending) / 2",
-      inputs: [
-        { label: "Beginning Inventory ($)", id: "in-bi", oninput: "runCalc('avg')" },
-        { label: "Ending Inventory ($)", id: "in-ei", oninput: "runCalc('avg')" }
-      ]
-    },
-    rop: {
-      title: "Reorder Point",
-      desc: "Shows the inventory level at which you should place a new order to avoid running out. It accounts for how much you use and how long it takes to receive new inventory.",
-      formula: "ROP = (Daily Usage * Lead Time) + SS",
-      inputs: [
-        { label: "Daily Usage", id: "in-u", oninput: "runCalc('rop')" },
-        { label: "Lead Time (Days)", id: "in-l", oninput: "runCalc('rop')" },
-        { label: "Safety Stock", id: "in-ss", oninput: "runCalc('rop')" }
-      ]
-    },
-    tic: {
-      title: "Total Inventory Cost",
-      desc: "Calculates the total cost of managing inventory, including ordering and holding costs. It helps identify the most cost-efficient way to manage stock.",
-      formula: "TC = (D/Q)*S + (Q/2)*H",
-      inputs: [
-        { label: "Annual Demand (D)", id: "in-td", oninput: "runCalc('tic')" },
-        { label: "Order Quantity (Q)", id: "in-tq", oninput: "runCalc('tic')" },
-        { label: "Ordering Cost (S)", id: "in-ts", oninput: "runCalc('tic')" },
-        { label: "Holding Cost (H)", id: "in-th", oninput: "runCalc('tic')" }
-      ]
-    },
-    cogs: {
-      title: "Cost of Goods Sold",
-      desc: "Represents the total cost of producing or purchasing the items that were sold. It is used to understand profitability and overall production costs.",
-      formula: "COGS = Beginning + Purchases - Ending",
-      inputs: [
-        { label: "Beginning Inventory ($)", id: "c-bi", oninput: "runCalc('cogs')" },
-        { label: "Purchases ($)", id: "c-p", oninput: "runCalc('cogs')" },
-        { label: "Ending Inventory ($)", id: "c-ei", oninput: "runCalc('cogs')" }
-      ]
-    },
-    turn: {
-      title: "Inventory Turnover",
-      desc: "Measures how many times inventory is sold or used over a period. Higher turnover means inventory is moving efficiently and not sitting unused.",
-      formula: "Turnover = COGS / Avg Inventory",
-      inputs: [
-        { label: "COGS ($)", id: "t-cogs", oninput: "runCalc('turn')" },
-        { label: "Average Inventory ($)", id: "t-avg", oninput: "runCalc('turn')" }
-      ]
-    }
-  };
-
-  function showCalc(type) {
-    const data = calcData[type];
-    if (!data) return;
-
-    // Update UI
-    document.getElementById('calc-title').innerText = data.title;
-    document.getElementById('calc-desc').innerText = data.desc;
-    document.getElementById('calc-formula').innerText = data.formula;
-    document.getElementById('final-result').innerText = '---';
-
-    // Update active button
-    document.querySelectorAll('.calc-tool-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${type}'`));
-    });
-
-    // Generate inputs
-    const container = document.getElementById('calc-inputs');
-    container.innerHTML = data.inputs.map(input => `
-      <div class="calc-group">
-        <label>${input.label}</label>
-        <input type="number" id="${input.id}" oninput="${input.oninput}" placeholder="0">
-      </div>
-    `).join('');
-  }
-
-  function runCalc(type) {
-    const resEl = document.getElementById('final-result');
-    
-    if (type === 'eoq') {
-      const d = parseFloat(document.getElementById('in-d').value);
-      const s = parseFloat(document.getElementById('in-s').value);
-      const h = parseFloat(document.getElementById('in-h').value);
-      if (d && s && h) resEl.innerText = Math.round(Math.sqrt((2 * d * s) / h)) + " units";
-    } 
-    else if (type === 'avg') {
-      const bi = parseFloat(document.getElementById('in-bi').value);
-      const ei = parseFloat(document.getElementById('in-ei').value);
-      if (!isNaN(bi) && !isNaN(ei)) resEl.innerText = "$" + ((bi + ei) / 2).toLocaleString(undefined, {minimumFractionDigits: 2});
-    }
-    else if (type === 'rop') {
-      const u = parseFloat(document.getElementById('in-u').value);
-      const l = parseFloat(document.getElementById('in-l').value);
-      const ss = parseFloat(document.getElementById('in-ss').value) || 0;
-      if (u && l) resEl.innerText = Math.round((u * l) + ss) + " units";
-    }
-    else if (type === 'tic') {
-      const d = parseFloat(document.getElementById('in-td').value);
-      const q = parseFloat(document.getElementById('in-tq').value);
-      const s = parseFloat(document.getElementById('in-ts').value);
-      const h = parseFloat(document.getElementById('in-th').value);
-      if (d && q && s && h) {
-        const res = (d / q) * s + (q / 2) * h;
-        resEl.innerText = "$" + res.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-      }
-    }
-    else if (type === 'cogs') {
-      const bi = parseFloat(document.getElementById('c-bi').value) || 0;
-      const p = parseFloat(document.getElementById('c-p').value) || 0;
-      const ei = parseFloat(document.getElementById('c-ei').value) || 0;
-      const res = (bi + p) - ei;
-      resEl.innerText = "$" + res.toLocaleString(undefined, {minimumFractionDigits: 2});
-    }
-    else if (type === 'turn') {
-      const cogs = parseFloat(document.getElementById('t-cogs').value);
-      const avg = parseFloat(document.getElementById('t-avg').value);
-      if (cogs && avg && avg !== 0) {
-        const res = cogs / avg;
-        resEl.innerText = res.toFixed(2) + " times";
-      }
-    }
-  }
-
-  // Initialize first calculator
-  showCalc('eoq');
-
-  // --- How To Use Sub-navigation ---
-  function showHowTo(page) {
-    // Update sub-nav items
-    document.querySelectorAll('.sub-nav-item').forEach(item => {
-      item.classList.toggle('active', item.getAttribute('data-tab') === page);
-    });
-
-    // Update content visibility
-    document.querySelectorAll('.how-to-content').forEach(content => {
-      content.classList.remove('active');
-    });
-    const target = document.getElementById(`${page}-content`);
-    if (target) target.classList.add('active');
-  }
-
-  const PREFS_KEY = 'ms_user_prefs';
-  const defaultPrefs = {
-    darkMode: true,
-    accentColor: 'gold',
-    uiDensity: 'comfortable',
-    glowEffects: true,
-    notifTone: 'subtle',
-    notifVolume: 70,
-    autoDismiss: '5',
-    criticalOnly: false,
-    stopAlerts: false
-  };
-
-  function savePrefs() {
-    const prefs = {
-      darkMode: document.getElementById('pref-dark-mode').checked,
-      accentColor: document.getElementById('pref-accent-color').value,
-      uiDensity: document.getElementById('pref-ui-density').value,
-      glowEffects: document.getElementById('pref-glow').checked,
-      notifTone: document.getElementById('pref-tone').value,
-      notifVolume: parseInt(document.getElementById('pref-volume').value),
-      autoDismiss: document.getElementById('pref-dismiss').value,
-      criticalOnly: document.getElementById('pref-critical-only').checked,
-      stopAlerts: document.getElementById('pref-stop-alerts').checked
-    };
-    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
-    applyPrefs(prefs);
-  }
-
-  function loadPrefs() {
-    const stored = localStorage.getItem(PREFS_KEY);
-    const prefs = stored ? { ...defaultPrefs, ...JSON.parse(stored) } : defaultPrefs;
-    
-    // Update UI
-    if(document.getElementById('pref-dark-mode')) document.getElementById('pref-dark-mode').checked = prefs.darkMode;
-    if(document.getElementById('pref-accent-color')) document.getElementById('pref-accent-color').value = prefs.accentColor;
-    if(document.getElementById('pref-ui-density')) document.getElementById('pref-ui-density').value = prefs.uiDensity;
-    if(document.getElementById('pref-glow')) document.getElementById('pref-glow').checked = prefs.glowEffects;
-    if(document.getElementById('pref-tone')) document.getElementById('pref-tone').value = prefs.notifTone;
-    if(document.getElementById('pref-volume')) document.getElementById('pref-volume').value = prefs.notifVolume;
-    if(document.getElementById('pref-dismiss')) document.getElementById('pref-dismiss').value = prefs.autoDismiss;
-    if(document.getElementById('pref-critical-only')) document.getElementById('pref-critical-only').checked = prefs.criticalOnly;
-    if(document.getElementById('pref-stop-alerts')) document.getElementById('pref-stop-alerts').checked = prefs.stopAlerts;
-
-    applyPrefs(prefs);
-  }
-
-  function applyPrefs(prefs) {
-    const b = document.body;
-    
-    // Appearance
-    b.classList.toggle('light-mode', !prefs.darkMode);
-    
-    b.classList.remove('theme-blue', 'theme-green', 'theme-crimson');
-    if (prefs.accentColor !== 'gold') b.classList.add(`theme-${prefs.accentColor}`);
-    
-    b.classList.toggle('density-compact', prefs.uiDensity === 'compact');
-    b.classList.toggle('no-glow', !prefs.glowEffects);
-  }
-
-  // --- Audio Synthesis for Tones ---
-  let audioCtx = null;
-
-  function playAlertSound() {
-    const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
-    if (prefs.stopAlerts) return;
-    const tone = prefs.notifTone || 'subtle';
-    const volume = (prefs.notifVolume || 70) / 100;
-    
-    if (tone === 'mute' || volume <= 0) return;
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    
-    gain.gain.setValueAtTime(0, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-    
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    if (tone === 'subtle') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-    } 
-    else if (tone === 'industrial') {
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(220, audioCtx.currentTime);
-    } 
-    else if (tone === 'pulse') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.2);
-    }
-
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.6);
-  }
-
-  function testTone() {
-    // This UI helper temporarily overrides prefs to test current selection
-    const tone = document.getElementById('pref-tone').value;
-    const volume = document.getElementById('pref-volume').value / 100;
-    
-    if (tone === 'mute') return;
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    if (tone === 'subtle') osc.type = 'sine';
-    else if (tone === 'industrial') osc.type = 'square';
-    else if (tone === 'pulse') osc.type = 'triangle';
-    
-    osc.frequency.setValueAtTime(tone==='industrial'?220:440, audioCtx.currentTime);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.6);
-  }
-
-  // --- Notification System ---
-  function notify(title, message, isCritical = false) {
-    const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
-    if (prefs.stopAlerts) return;
-    
-    const container = document.getElementById('notification-container');
-    
-    if (prefs.criticalOnly && !isCritical) return;
-
-    playAlertSound();
-
-    const dismissPref = prefs.autoDismiss || '5';
-    const isManual = dismissPref === 'manual';
-
-    const div = document.createElement('div');
-    div.className = `notification ${isCritical ? 'critical' : ''}`;
-    div.innerHTML = `
-      <div class="notification-icon" style="margin-top: 2px;">
-        ${isCritical ? 
-          '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" style="width:18px;height:18px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' :
-          '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="width:18px;height:18px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'
-        }
-      </div>
-      <div class="notification-content" style="flex: 1;">
-        <h6>${title}</h6>
-        <p>${message}</p>
-        <button class="btn-sm ghost" style="margin-top: 8px; padding: 2px 8px; font-size: 9px; width: 100%; border-color: var(--border);">Dismiss</button>
-      </div>
-    `;
-
-    container.appendChild(div);
-
-    if (!isManual) {
-      setTimeout(() => {
-        if (div.parentNode) {
-          div.style.animation = 'fadeOut 0.3s forwards';
-          setTimeout(() => div.remove(), 300);
-        }
-      }, parseInt(dismissPref) * 1000);
-    }
-    
-    div.onclick = () => {
-      div.style.animation = 'fadeOut 0.3s forwards';
-      setTimeout(() => div.remove(), 300);
-    };
-  }
-
-  // --- AI Assistant Logic ---
-  const aiChatInput = document.getElementById('ai-chat-input');
-  const aiSendBtn = document.getElementById('ai-send-btn');
-  const aiChatHistory = document.getElementById('ai-chat-history');
-  
-  function appendToHistory(role, text, rawData = null) {
-    if (aiChatHistory.querySelector('div[style*="text-align: center"]')) {
-      aiChatHistory.innerHTML = '';
-    }
-
-    const msgDiv = document.createElement('div');
-    msgDiv.style.marginBottom = '8px';
-    msgDiv.style.padding = '10px 14px';
-    msgDiv.style.borderRadius = '8px';
-    
-    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const label = role === 'user' ? 'OPERATOR' : 'AI ASSISTANT';
-    const labelColor = role === 'user' ? 'var(--accent)' : 'var(--success)';
-    const bgColor = role === 'user' ? 'rgba(240,180,41,0.05)' : 'rgba(52,211,153,0.05)';
-    const borderColor = role === 'user' ? 'rgba(240,180,41,0.1)' : 'rgba(52,211,153,0.1)';
-
-    msgDiv.style.background = bgColor;
-    msgDiv.style.border = `1px solid ${borderColor}`;
-
-    let jsonHtml = '';
-    if (rawData) {
-      const jsonId = 'json-' + Math.random().toString(36).substr(2, 9);
-      jsonHtml = `
-        <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-          <details style="cursor: pointer;">
-            <summary style="font-size: 10px; color: var(--muted); outline: none; display: flex; align-items: center; gap: 4px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 10px; height: 10px;"><polyline points="9 18 15 12 9 6"/></svg>
-              VIEW SOURCE DATA
-            </summary>
-            <pre style="margin-top: 8px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 4px; font-size: 11px; overflow-x: auto; color: #9cdcfe; border: 1px solid rgba(255,255,255,0.05);">${JSON.stringify(rawData, null, 2)}</pre>
-          </details>
-        </div>
-      `;
-    }
-
-    msgDiv.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-        <span style="font-size: 10px; font-weight: 700; color: ${labelColor}; letter-spacing: 0.05em;">${label}</span>
-        <span style="font-size: 9px; color: var(--muted);">${time}</span>
-      </div>
-      <div style="color: var(--text); font-size: 13px; white-space: pre-wrap;">${text}</div>
-      ${jsonHtml}
-    `;
-
-    aiChatHistory.appendChild(msgDiv);
-    aiChatHistory.scrollTop = aiChatHistory.scrollHeight;
-  }
-
-  async function sendMessageToAI() {
-    const message = aiChatInput.value.trim();
-    if (!message) return;
-
-    // Generate a unique session ID for this specific message to ensure a fresh context
-    const messageSessionId = "ms-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5);
-
-    // UI Updates
-    aiChatInput.value = '';
-    aiChatInput.disabled = true;
-    aiSendBtn.disabled = true;
-    aiSendBtn.innerText = 'WAITING...';
-    
-    appendToHistory('user', message);
-
-    try {
-      const username = document.getElementById('navUsername')?.textContent || 'anonymous';
-      const timestamp = new Date().toISOString();
-      
-      console.log("AI Chat Request:", { message, session_id: messageSessionId, user: username, timestamp });
-      
-      const response = await fetch("https://twinagent.quangphuly.online/chat", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache"
-        },
-        body: JSON.stringify({ 
-          message: message, 
-          session_id: messageSessionId, 
-          user: username,
-          timestamp: timestamp,
-          convai_mode: true 
-        }),
-        cache: 'no-cache'
-      });
-
-      if (!response.ok) throw new Error('API Error');
-      
-      const data = await response.json();
-      const aiResponse = data.convai?.spoken_answer || data.response || "I encountered an issue processing your request.";
-      
-      appendToHistory('ai', aiResponse, data);
-
-    } catch (error) {
-      console.error("AI Assistant Error:", error);
-      appendToHistory('ai', "System Error: Unable to connect to the MakerSpace AI Assistant. Please check your network connection.");
-    } finally {
-      aiChatInput.disabled = false;
-      aiSendBtn.disabled = false;
-      aiSendBtn.innerText = 'SEND';
-      aiChatInput.focus();
-    }
-  }
-
-  aiSendBtn.addEventListener('click', sendMessageToAI);
-  aiChatInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessageToAI();
-  });
-
-  // Initial load
-  loadPrefs();
-</script>
-
+<!-- Scripts -->
 <script src="/assets/personnel-visualizer.js"></script>
-<script>
-  // --- Personnel Tracking Implementation ---
-  let visualizer;
-  let trackingMode = 'sim';
-  let cameraEnabled = false;
-  let simCounts = { zone1: 1, zone2: 2, zone3: 1, zone4: 0 };
-  let simInterval;
-  let liveInterval;
-  
-  function toggleCameraFeed() {
-    cameraEnabled = !cameraEnabled;
-    const btn = document.getElementById('btn-camera-toggle');
-    const img = document.getElementById('cvStream');
-    const placeholder = document.getElementById('stream-placeholder');
+<script src="/js/dashboard/notifications.js"></script>
+<script src="/js/dashboard/preferences.js"></script>
+<script src="/js/dashboard/calculator.js"></script>
+<script src="/js/dashboard/ai-assistant.js"></script>
+<script src="/js/dashboard/personnel-tracking.js"></script>
+<script src="/js/dashboard/main.js"></script>
 
-    if (cameraEnabled) {
-      btn.innerText = 'CAMERA: ON';
-      btn.classList.replace('ghost', 'primary');
-      img.src = '/api/video?t=' + Date.now();
-      img.style.display = 'block';
-      placeholder.style.display = 'none';
-    } else {
-      btn.innerText = 'CAMERA: OFF';
-      btn.classList.replace('primary', 'ghost');
-      img.src = '';
-      img.style.display = 'none';
-      placeholder.style.display = 'flex';
-    }
-    updateTrackingLayout();
-  }
-
-  function updateTrackingLayout() {
-    const leftCol = document.getElementById('tracking-left-col');
-    const grid = document.getElementById('zone-grid');
-    const camera = document.getElementById('camera-feed-container');
-    const map = document.getElementById('tracking-map-container');
-    const labels = document.querySelectorAll('.personnel-label');
-
-    if (trackingMode === 'live' && cameraEnabled) {
-      // 40/60 Split Layout
-      leftCol.style.width = 'auto';
-      leftCol.style.flex = '40 1 0%';
-      grid.style.display = 'grid';
-      grid.style.gridTemplateColumns = '1fr 1fr';
-      grid.style.flex = 'none';
-      camera.style.display = 'flex';
-      map.style.flex = '60 1 0%';
-      labels.forEach(l => l.style.display = 'none');
-    } else {
-      // Original Thin Sidebar Layout
-      leftCol.style.width = '140px';
-      leftCol.style.flex = '0 0 140px';
-      grid.style.display = 'flex';
-      grid.style.flexDirection = 'column';
-      grid.style.flex = '1';
-      camera.style.display = 'none';
-      map.style.flex = '1 1 0%';
-      labels.forEach(l => l.style.display = 'block');
-    }
-    
-    // Resize visualizer canvas after DOM updates
-    if (visualizer) {
-      setTimeout(() => visualizer.resize(), 50);
-      setTimeout(() => visualizer.resize(), 350); // After transition ends
-    }
-  }
-
-  function refreshStream() {
-    const img = document.getElementById('cvStream');
-    if (cameraEnabled) {
-      img.src = '/api/video?t=' + Date.now();
-    }
-  }
-
-  // Wait for image to load to ensure correct scaling
-  const mapImg = document.querySelector('#tracking-map-container img');
-  if (mapImg.complete) {
-    initVisualizer();
-  } else {
-    mapImg.onload = initVisualizer;
-  }
-
-  function setTrackingMode(mode) {
-    if (trackingMode === mode && visualizer) return;
-    trackingMode = mode;
-    
-    const btnLive = document.getElementById('btn-live-mode');
-    const btnSim = document.getElementById('btn-sim-mode');
-    const btnCam = document.getElementById('btn-camera-toggle');
-    const errorOverlay = document.getElementById('live-service-error');
-
-    // Update visualizer state
-    if (visualizer) visualizer.setMode(mode);
-
-    if (mode === 'live') {
-      btnLive.classList.replace('ghost', 'primary');
-      btnSim.classList.replace('primary', 'ghost');
-      btnCam.style.display = 'block';
-      
-      // Stop simulation
-      clearInterval(simInterval);
-      
-      // Start live polling (every 4 seconds)
-      fetchLiveTrackingData();
-      if (liveInterval) clearInterval(liveInterval);
-      liveInterval = setInterval(fetchLiveTrackingData, 4000);
-    } else {
-      btnLive.classList.replace('primary', 'ghost');
-      btnSim.classList.replace('ghost', 'primary');
-      btnCam.style.display = 'none';
-      if (errorOverlay) errorOverlay.style.display = 'none';
-      
-      // Turn off camera when leaving live mode
-      if (cameraEnabled) {
-         cameraEnabled = false;
-         const btn = document.getElementById('btn-camera-toggle');
-         btn.innerText = 'CAMERA: OFF';
-         btn.classList.replace('primary', 'ghost');
-      }
-      
-      // Stop live polling
-      clearInterval(liveInterval);
-      
-      // Resume simulation
-      startSimulation();
-    }
-    updateTrackingLayout();
-  }
-
-  async function fetchLiveTrackingData() {
-    if (trackingMode !== 'live') return;
-    
-    const errorOverlay = document.getElementById('live-service-error');
-    
-    try {
-      // 3 calls spaced 0.5s apart to ensure consistency
-      const samples = [];
-      for (let i = 0; i < 3; i++) {
-        try {
-          const response = await fetch('https://cv.nathancollins.xyz/api/tracking/live');
-          if (response.ok) {
-            const data = await response.json();
-            samples.push(data.zone_counts);
-          }
-        } catch (e) {}
-        if (i < 2) await new Promise(r => setTimeout(r, 500));
-      }
-
-      if (samples.length === 0) throw new Error('Tracking API unreachable');
-      
-      // Hide error if successful
-      if (errorOverlay) errorOverlay.style.display = 'none';
-
-      // Logic to get "more consistent" response (Mode/Majority)
-      const resolveCount = (zoneKey) => {
-        const values = samples.map(s => s[zoneKey] || 0);
-        const freq = {};
-        values.forEach(v => freq[v] = (freq[v] || 0) + 1);
-        let mostFreq = values[0];
-        let maxCount = 0;
-        for (const v in freq) {
-          if (freq[v] >= maxCount) {
-            maxCount = freq[v];
-            mostFreq = parseInt(v);
-          }
-        }
-        return mostFreq;
-      };
-
-      const counts = {
-        zone1: resolveCount('Zone_TopLeft'),
-        zone2: resolveCount('Zone_TopRight'),
-        zone3: resolveCount('Zone_BottomLeft'),
-        zone4: resolveCount('Zone_BottomRight')
-      };
-      
-      if (visualizer) visualizer.updateCounts(counts);
-      updateZoneUI(counts);
-    } catch (err) {
-      console.warn('Live tracking fetch failed:', err);
-      // Show error overlay on failure
-      if (errorOverlay) errorOverlay.style.display = 'flex';
-    }
-  }
-
-  function initVisualizer() {
-    visualizer = new PersonnelVisualizer('personnelCanvas', 'tracking-map-container');
-    visualizer.debug = true; // Safe zones always visible as requested
-    
-    // Security Alert: Hook notification to real-time zone entry
-    visualizer.onZoneEntry = (zoneId, personId) => {
-      if (zoneId === 4) {
-        notify("Security Alert", `Unauthorized entry detected in Restricted Zone 4 (Subject ID: ${personId})`, true);
-      }
-    };
-
-    // Initial data load
-    if (trackingMode === 'sim') {
-      visualizer.updateCounts(simCounts);
-      updateZoneUI(simCounts);
-      startSimulation();
-    } else {
-      fetchLiveTrackingData();
-      liveInterval = setInterval(fetchLiveTrackingData, 4000);
-    }
-  }
-
-  function startSimulation() {
-    clearInterval(simInterval);
-    simInterval = setInterval(simulatePersonnelMovement, 4000);
-  }
-
-  let lastZone4Entry = 0;
-  
-  function simulatePersonnelMovement() {
-    if (!visualizer || trackingMode !== 'sim') return;
-
-    const now = Date.now();
-    const canEnterZone4 = (now - lastZone4Entry) > 30000;
-    const mustEnterZone4 = (now - lastZone4Entry) > 45000;
-
-    // Realistic Incremental Logic
-    const numShifts = Math.random() < 0.1 ? 0 : (Math.random() < 0.2 ? 3 : (Math.random() < 0.5 ? 1 : 2));
-    
-    for(let i=0; i<numShifts; i++) {
-      const zones = ['zone1', 'zone2', 'zone3', 'zone4', 'outside'];
-      const fromZone = zones[Math.floor(Math.random() * zones.length)];
-      
-      let targets = [];
-      if (fromZone === 'outside') targets = ['zone2'];
-      if (fromZone === 'zone1') targets = ['zone2', 'zone3'];
-      if (fromZone === 'zone2') targets = ['zone1', 'zone4', 'outside'];
-      if (fromZone === 'zone3') targets = ['zone1', 'zone4'];
-      if (fromZone === 'zone4') targets = ['zone2', 'zone3'];
-
-      let toZone = targets[Math.floor(Math.random() * targets.length)];
-
-      // ENFORCE RESTRICTIONS
-      if (toZone === 'zone4') {
-        if (!canEnterZone4 && !mustEnterZone4) {
-             // Redirect to another target if too early for Z4
-             toZone = targets.find(t => t !== 'zone4' && t !== fromZone) || fromZone;
-        } else {
-             lastZone4Entry = now;
-        }
-      }
-
-      // Apply the shift if possible + Cap at 4
-      if (fromZone === 'outside') {
-        if (simCounts[toZone] < 4) simCounts[toZone]++;
-      } else if (toZone === 'outside') {
-        if (simCounts[fromZone] > 0) simCounts[fromZone]--;
-      } else {
-        if (simCounts[fromZone] > 0 && simCounts[toZone] < 4) {
-          simCounts[fromZone]--;
-          simCounts[toZone]++;
-        }
-      }
-    }
-
-    // Double check caps
-    Object.keys(simCounts).forEach(z => {
-      if (simCounts[z] > 4) simCounts[z] = 4;
-    });
-    
-    visualizer.updateCounts(simCounts);
-    updateZoneUI(simCounts);
-  }
-
-  function updateZoneUI(counts) {
-    const zoneBoxes = document.querySelectorAll('#zone-grid .instruction-card');
-    if (zoneBoxes.length >= 4) {
-      zoneBoxes[0].querySelector('div:nth-child(2)').innerText = counts.zone1;
-      zoneBoxes[1].querySelector('div:nth-child(2)').innerText = counts.zone2;
-      zoneBoxes[2].querySelector('div:nth-child(2)').innerText = counts.zone3;
-      zoneBoxes[3].querySelector('div:nth-child(2)').innerText = counts.zone4;
-    }
-  }
-</script>
 </body>
 </html>
