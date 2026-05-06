@@ -1,4 +1,4 @@
-const SW_VERSION = "1.0.3";
+const SW_VERSION = "1.0.4";
 const cacheName = "DefaultCompany-DigitalTwinWebGL-0.1.0";
 
 self.addEventListener('install', function (e) {

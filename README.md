@@ -67,6 +67,52 @@ A suite of technical inventory tools implementing standard industrial engineerin
 
 ---
 
+##  Updating the Unity WebGL Build
+
+When replacing the Unity WebGL build, follow these steps to ensure the security headers, Service Worker, and Convai integration continue to function.
+
+### 1. Preparation & Cleanup
+Delete the following existing files/folders in `public/unity/`:
+*   `Build/` (Contains the core Unity logic and data)
+*   `TemplateData/` (Contains icons, styles, and loaders)
+*   `index.html` (The entry point)
+*   `manifest.webmanifest`
+
+### 2. Deployment
+Copy the new build files from Unity into `public/unity/`. Ensure the structure remains:
+*   `public/unity/Build/`
+*   `public/unity/TemplateData/`
+*   `public/unity/index.html`
+*   `public/unity/manifest.webmanifest`
+
+### 3. Required Modifications
+The following changes **must** be applied to the new files for the build to work within this environment:
+
+#### A. index.html
+*   **Convai SDK:** Add `<script src="TemplateData/ConvaiWebGLSDK.js"></script>` to the `<head>`.
+*   **Service Worker:** Replace the default registration script with the "robust" version that includes a timestamp to force updates:
+    ```javascript
+    navigator.serviceWorker.register("ServiceWorker.js?v=" + Date.now())
+      .then(reg => { reg.update(); });
+    ```
+
+#### B. ServiceWorker.js
+If the build provides a default `ServiceWorker.js`, replace it with the project's custom version. Our version is critical because it:
+1.  Intercepts all asset requests.
+2.  Manually injects `Cross-Origin-Embedder-Policy: require-corp` and `Cross-Origin-Opener-Policy: same-origin` headers into cached responses.
+3.  Without these, the build will fail to load `SharedArrayBuffer` and the application will crash.
+
+#### C. Server Middleware
+Ensure the files in the `Build/` directory match the naming convention in `src/middleware/unity.js`. By default, this project expects:
+*   `Temp.data.unityweb`
+*   `Temp.framework.js.unityweb`
+*   `Temp.wasm.unityweb`
+*   `Temp.loader.js`
+
+If Unity generates different filenames (e.g., `Build.data.unityweb`), you must update the `setHeaders` logic in `src/middleware/unity.js`.
+
+---
+
 ##  Project Structure
 
 ```text
