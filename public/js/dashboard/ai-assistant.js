@@ -1,7 +1,6 @@
 /**
  * AI Assistant Chat Logic
  */
-
 const aiChatInput = document.getElementById('ai-chat-input');
 const aiSendBtn = document.getElementById('ai-send-btn');
 const aiChatHistory = document.getElementById('ai-chat-history');

@@ -1,0 +1,47 @@
+<div class="instruction-card">
+  <h4 style="margin-bottom: 12px; color: var(--accent);">Using Personnel Tracking</h4>
+  <p style="color: var(--text); font-size: 13px; margin-bottom: 16px;">
+    Our personnel tracking system uses computer vision to monitor movement within the MakerSpace, ensuring safety and security in real-time.
+  </p>
+  
+  <div class="step-img" style="margin-bottom: 20px;">
+    <img src="/assets/gif2.gif" alt="Personnel Tracking Demo" style="width: 100%; border-radius: 7px; border: 1px solid var(--border);">
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+    <div class="control-item">
+      <div class="key-cap" style="background: var(--accent); color: white;">●</div>
+      <div class="control-info">
+        <h5>Person Markers</h5>
+        <p>Each dot on the map represents a person detected by the system.</p>
+      </div>
+    </div>
+    <div class="control-item">
+      <div class="key-cap" style="background: #ff4d4d; color: white;">!</div>
+      <div class="control-info">
+        <h5>Zone Alerts</h5>
+        <p>Receive an instant alert when a person enters a restricted zone.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px;">
+    <h5 style="color: var(--text); margin-bottom: 8px;">Alert Preferences</h5>
+    <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Customize how you receive alerts, including sound tones and visual notifications.</p>
+    <button class="btn-sm" style="background: var(--accent); color: var(--bg); border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600;" onclick="document.querySelector('[data-page=\'preferences\']').click()">Configure Alerts</button>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+    <h5 style="color: var(--text); margin-bottom: 4px;">Monitoring Modes</h5>
+    
+    <div style="background: var(--surface2); padding: 14px; border-radius: 8px; border-left: 3px solid var(--accent);">
+      <div style="font-weight: 600; font-size: 13px; color: var(--text);">Live Mode</div>
+      <p style="font-size: 12px; color: var(--muted);">Real-time monitoring using a camera feed with defined safety zones.</p>
+    </div>
+
+    <div style="background: var(--surface2); padding: 14px; border-radius: 8px; border-left: 3px solid var(--accent);">
+      <div style="font-weight: 600; font-size: 13px; color: var(--text);">Simulation Mode</div>
+      <p style="font-size: 12px; color: var(--muted);">Demonstration mode using synthetic data to show high-activity scenarios with multiple people moving through the space.</p>
+    </div>
+  </div>
+</div>

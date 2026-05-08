@@ -1,7 +1,6 @@
 /**
  * Notification System & Audio Alerts
  */
-
 let audioCtx = null;
 
 function playAlertSound() {

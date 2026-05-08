@@ -1,7 +1,6 @@
 /**
  * Inventory Management Calculators
  */
-
 const calcData = {
   eoq: {
     title: "EOQ Calculator",

@@ -1,0 +1,88 @@
+<div class="instruction-card">
+  <h4 style="margin-bottom: 12px; color: var(--accent);">Using Convai AI</h4>
+  <p style="color: var(--text); font-size: 13px; margin-bottom: 16px;">
+    The MakerSpace Digital Twin features an advanced AI Assistant powered by Convai. You can interact with the environment and get information through natural language.
+  </p>
+  
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+    <div class="control-item">
+      <div class="key-cap">T</div>
+      <div class="control-info">
+        <h5>Voice Interaction</h5>
+        <p>Hold T to speak. Release to send your voice command.</p>
+      </div>
+    </div>
+    <div class="control-item">
+      <div class="key-cap">↵</div>
+      <div class="control-info">
+        <h5>Text Interaction</h5>
+        <p>Press Enter to open the chat box, type your prompt, and press Enter again.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-img">
+    <img src="/assets/ConvaiExamplePhoto.png" alt="Convai AI Interaction" style="width: 100%; border-radius: 7px;">
+  </div>
+</div>
+
+<div class="instruction-card">
+  <h4 style="margin-bottom: 16px; color: var(--accent);">Example Prompts</h4>
+  <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px;">
+    <li style="background: var(--surface2); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">"Tell me about the MakerSpace"</li>
+    <li style="background: var(--surface2); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">"What model printers are found in the MakerSpace"</li>
+    <li style="background: var(--surface2); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">"How many printers are in the makerspace?"</li>
+    <li style="background: var(--surface2); padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">"How do I start a print in the MakerSpace?"</li>
+  </ul>
+</div>
+
+<div class="instruction-card">
+  <h4 style="margin-bottom: 16px; color: var(--accent);">AI Actions</h4>
+  <p style="color: var(--muted); font-size: 13px; margin-bottom: 8px;">The AI assistant can perform physical actions within the digital twin environment:</p>
+  
+  <div style="background: rgba(240,180,41,0.1); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 4px; margin-bottom: 20px;">
+    <p style="font-size: 12px; color: var(--text); margin: 0;"><strong>Note:</strong> Machines are referred to for actions by their <strong>station number</strong> (e.g., A4 or B5). This resolves the confusion between a station location (A1) and a machine model (Bambu A1).</p>
+  </div>
+  
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
+      <h5 style="color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+        <span style="color: var(--accent);">●</span> "Show me..."
+      </h5>
+      <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">The AI will walk to the specified machine and highlight it for you.</p>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); background: rgba(240,180,41,0.05); padding: 8px; border-radius: 6px;">
+        Prompt: "Show me printer B3"
+      </div>
+    </div>
+
+    <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
+      <h5 style="color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+        <span style="color: var(--accent);">●</span> "Display Dashboard..."
+      </h5>
+      <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Opens the detailed data view for the specified machine.</p>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); background: rgba(240,180,41,0.05); padding: 8px; border-radius: 6px;">
+        Prompt: "Display dashboard for printer at station D9"
+      </div>
+    </div>
+
+    <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
+      <h5 style="color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+        <span style="color: var(--accent);">●</span> "Highlight..."
+      </h5>
+      <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Highlights the specified machine to find easily in the digital twin.</p>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); background: rgba(240,180,41,0.05); padding: 8px; border-radius: 6px;">
+        Prompt: "Highlight printer A2"
+      </div>
+    </div>
+
+    <div style="background: var(--surface2); padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
+      <h5 style="color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+        <span style="color: var(--accent);">●</span> "Move to..."
+      </h5>
+      <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">The NPC will move to the specified machine.</p>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); background: rgba(240,180,41,0.05); padding: 8px; border-radius: 6px;">
+        Prompt: "Move to printer C6"
+      </div>
+    </div>
+  </div>
+</div>

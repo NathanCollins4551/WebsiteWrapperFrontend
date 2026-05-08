@@ -1,0 +1,132 @@
+<div class="instruction-card">
+  <h4 style="margin-bottom: 12px; color: var(--accent);">Digital Twin AI Assistant</h4>
+  <p style="color: var(--text); font-size: 13px; margin-bottom: 16px;">
+    The dedicated AI Assistant tab allows for deep conversation with the MakerSpace Digital Twin. It provides a full-page chat experience with detailed source data visibility.
+  </p>
+</div>
+
+<div class="instruction-card">
+  <h4 style="margin-bottom: 20px; color: var(--accent);">All questions you can ask right now</h4>
+  
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    <!-- Agent 1 -->
+    <div>
+      <h5 style="color: var(--text); margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+        <span style="background: var(--accent); color: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;">1</span>
+        ExplanationAgent
+      </h5>
+      <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Live printer, task, and system state monitoring.</p>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+        <div>
+          <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Task Queries</h6>
+          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Why did task 1774131148533 fail?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Explain task 1774131586651.</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Explain task PT-B1-P1S-19D127BA65B.</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What happened to task 1774131586651?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What is the status of task PT-B1-P1S-19D127BA65B?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Which printer was task 1774131148533 on?</li>
+          </ul>
+        </div>
+        <div>
+          <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Printer Queries</h6>
+          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What happened to A1-P1S?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Is A1-P1S running right now?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Is printer 01P00A3B2300627 running?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What is the status of A1-P1S?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Explain printer 01P00A3B2300627.</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What is the latest issue on A1-P1S?</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top: 16px;">
+        <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Live Operations</h6>
+        <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 6px;">
+          <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What is happening in the makerspace right now?</li>
+          <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">How many printers are running right now?</li>
+          <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Is the scheduler active right now?</li>
+          <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">How many jobs are queued right now?</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Agent 2 -->
+    <div>
+      <h5 style="color: var(--text); margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+        <span style="background: var(--accent); color: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;">2</span>
+        StaticKnowledgeAgent
+      </h5>
+      <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Manuals, safety protocols, troubleshooting, and material guidance.</p>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+        <div>
+          <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Safety & Rules</h6>
+          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What are the 3D printer safety rules?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What hazards should I know before using a printer?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Is it safe to leave a printer unattended?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What PPE should I use in the makerspace?</li>
+          </ul>
+        </div>
+        <div>
+          <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Troubleshooting</h6>
+          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">How do I troubleshoot 3D printing errors?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Why does my print have stringing?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">How do I fix warping or poor bed adhesion?</li>
+          </ul>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 16px;">
+        <div>
+          <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Materials</h6>
+          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What material should I use for strong parts?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What is the difference between PLA and PETG?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What material is best for heat resistance?</li>
+          </ul>
+        </div>
+        <div>
+          <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Manuals & Room Info</h6>
+          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What does the PCNC 440 manual say?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Tell me about the makerspace room.</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">How is DMAIC used for process improvement?</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent 3 -->
+    <div>
+      <h5 style="color: var(--text); margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+        <span style="background: var(--accent); color: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;">3</span>
+        InventoryAgent
+      </h5>
+      <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Detected spools, zone summaries, and camera vision data.</p>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+        <div>
+          <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Inventory & Spools</h6>
+          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What spools do we have right now?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What filament is available right now?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Do we have red PETG?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Show me all red spools.</li>
+          </ul>
+        </div>
+        <div>
+          <h6 style="font-size: 11px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">Zones & Camera</h6>
+          <ul style="list-style: none; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 6px;">
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What is in Zone_Left or Zone_Right?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Which zone has the blue spool?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">What does the inventory camera see?</li>
+            <li style="background: var(--surface2); padding: 6px 10px; border-radius: 6px;">Give me the inventory zone summary.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

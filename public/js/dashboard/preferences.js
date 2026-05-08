@@ -16,17 +16,24 @@ const defaultPrefs = {
 };
 
 function savePrefs() {
-  const prefs = {
-    darkMode: document.getElementById('pref-dark-mode').checked,
-    accentColor: document.getElementById('pref-accent-color').value,
-    uiDensity: document.getElementById('pref-ui-density').value,
-    glowEffects: document.getElementById('pref-glow').checked,
-    notifTone: document.getElementById('pref-tone').value,
-    notifVolume: parseInt(document.getElementById('pref-volume').value),
-    autoDismiss: document.getElementById('pref-dismiss').value,
-    criticalOnly: document.getElementById('pref-critical-only').checked,
-    stopAlerts: document.getElementById('pref-stop-alerts').checked
+  const getVal = (id, prop = 'value') => {
+    const el = document.getElementById(id);
+    if (!el) return defaultPrefs[id.replace('pref-', '').replace(/-([a-z])/g, g => g[1].toUpperCase())] || '';
+    return prop === 'checked' ? el.checked : el.value;
   };
+
+  const prefs = {
+    darkMode: getVal('pref-dark-mode', 'checked'),
+    accentColor: getVal('pref-accent-color'),
+    uiDensity: getVal('pref-ui-density'),
+    glowEffects: getVal('pref-glow', 'checked'),
+    notifTone: getVal('pref-tone'),
+    notifVolume: parseInt(getVal('pref-volume')) || 70,
+    autoDismiss: getVal('pref-dismiss'),
+    criticalOnly: getVal('pref-critical-only', 'checked'),
+    stopAlerts: getVal('pref-stop-alerts', 'checked')
+  };
+  
   localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
   applyPrefs(prefs);
 }
@@ -79,7 +86,39 @@ function applyPrefs(prefs) {
 }
 
 function testTone() {
-  if (window.playAlertSound) window.playAlertSound();
+  const tone = document.getElementById('pref-tone')?.value || 'subtle';
+  const volume = (document.getElementById('pref-volume')?.value || 70) / 100;
+  
+  if (tone === 'mute' || volume <= 0) return;
+  if (!window.AudioContext && !window.webkitAudioContext) return;
+
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+  
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  if (tone === 'subtle') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+  } 
+  else if (tone === 'industrial') {
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+  } 
+  else if (tone === 'pulse') {
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.2);
+  }
+
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.6);
 }
 
 window.savePrefs = savePrefs;

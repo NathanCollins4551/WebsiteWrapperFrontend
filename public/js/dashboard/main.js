@@ -99,17 +99,45 @@ function initUnity() {
 }
 
 // How-To Sub-navigation
-function showHowTo(page) {
+async function showHowTo(page) {
   document.querySelectorAll('.sub-nav-item').forEach(item => {
     item.classList.toggle('active', item.getAttribute('data-tab') === page);
   });
 
-  document.querySelectorAll('.how-to-content').forEach(content => {
-    content.classList.remove('active');
-  });
-  
-  const target = document.getElementById(`${page}-content`);
-  if (target) target.classList.add('active');
+  const contentMap = {
+    'controls': '/partials/howto/controls.html',
+    'convai': '/partials/howto/convai.html',
+    'object-tracking-docs': '/partials/howto/inventory.html',
+    'human-tracking-docs': '/partials/howto/personnel.html',
+    'ai-assistant-docs': '/partials/howto/ai-assistant.html'
+  };
+
+  const container = document.getElementById('howto-content-container');
+  if (container && contentMap[page]) {
+    try {
+      const res = await fetch(contentMap[page]);
+      if (res.ok) {
+        container.innerHTML = await res.text();
+      }
+    } catch (err) {
+      console.error('Failed to load how-to content', err);
+    }
+  }
+}
+
+// Initial content loading
+async function loadPartials() {
+  // Load AI Welcome
+  const aiHistory = document.getElementById('ai-chat-history');
+  if (aiHistory) {
+    try {
+      const res = await fetch('/partials/ai-welcome.html');
+      if (res.ok) aiHistory.innerHTML = await res.text();
+    } catch (err) { console.error('Failed to load AI welcome', err); }
+  }
+
+  // Load Initial How-To
+  showHowTo('controls');
 }
 
 window.showHowTo = showHowTo;
@@ -120,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
   initLogout();
   initUnity();
+  loadPartials();
   
   // Load specialized modules
   if (window.loadPrefs) window.loadPrefs();
